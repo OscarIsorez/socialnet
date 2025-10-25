@@ -1,0 +1,2715 @@
+Comprehensive Flutter Development Roadmap for Redemton Social Network App
+Executive Summary
+Build a location-based social networking app with event management, calendar integration, and real-time messaging using Flutter, BLoC pattern, and clean architecture principles.
+
+I. Project Architecture & Structure
+A. Folder Structure
+lib/
+├── core/
+│   ├── constants/
+│   │   ├── app_constants.dart
+│   │   ├── api_endpoints.dart
+│   │   └── app_colors.dart
+│   ├── error/
+│   │   ├── exceptions.dart
+│   │   └── failures.dart
+│   ├── network/
+│   │   └── network_info.dart
+│   ├── usecases/
+│   │   └── usecase.dart
+│   ├── utils/
+│   │   ├── validators.dart
+│   │   ├── date_formatter.dart
+│   │   └── image_picker_helper.dart
+│   └── theme/
+│       ├── app_theme.dart
+│       └── text_styles.dart
+├── data/
+│   ├── models/
+│   ├── repositories/
+│   │   └── *_repository_impl.dart
+│   └── datasources/
+│       ├── local/
+│       └── remote/
+├── domain/
+│   ├── entities/
+│   ├── repositories/
+│   │   └── *_repository.dart
+│   └── usecases/
+├── presentation/
+│   ├── bloc/
+│   ├── pages/
+│   ├── widgets/
+│   └── routes/
+├── injection_container.dart
+└── main.dart
+
+II. Technology Stack
+Required Dependencies	
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_bloc: ^8.1.3
+  equatable: ^2.0.5
+  
+  # Dependency Injection
+  get_it: ^7.6.4
+  injectable: ^2.3.2
+  
+  # Network & Data
+  dartz: ^0.10.1
+  json_annotation: ^4.8.1
+  
+  # Maps & Location
+  google_maps_flutter: ^2.5.0
+  geolocator: ^10.1.0
+  geocoding: ^2.1.1
+  
+  # Firebase (Mock for now)
+  cloud_firestore: ^4.13.0
+  firebase_core: ^2.24.0
+  firebase_auth: ^4.15.0
+  firebase_storage: ^11.5.0
+  
+  # UI Components
+  cached_network_image: ^3.3.0
+  image_picker: ^1.0.4
+  flutter_svg: ^2.0.9
+  
+  # Calendar
+  table_calendar: ^3.0.9
+  intl: ^0.18.1
+  
+  # Messaging
+  dash_chat_2: ^0.0.18
+  
+  # Utilities
+  uuid: ^4.1.0
+  connectivity_plus: ^5.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.6
+  json_serializable: ^6.7.1
+  injectable_generator: ^2.4.1
+  mockito: ^5.4.3
+  bloc_test: ^9.1.5
+
+III. Core Entities & Models
+A. Domain Entities
+1. User Entity
+
+class User extends Equatable {
+  final String id;
+  final String email;
+  final String profileName;
+  final String? photoUrl;
+  final bool isPublic;
+  final List<String> interests;
+  final List<String> friendIds;
+  final DateTime createdAt;
+  
+  // Constructor, props, copyWith
+}
+
+class Event extends Equatable {
+  final String id;
+  final String creatorId;
+  final String title;
+  final String description; // max 200 chars
+  final EventCategory category;
+  final EventSubCategory subCategory;
+  final GeoPoint location;
+  final String? photoUrl;
+  final DateTime? startTime;
+  final DateTime? endTime;
+  final bool isActive;
+  final int verificationCount;
+  final DateTime createdAt;
+}
+
+class CalendarActivity extends Equatable {
+  final String id;
+  final String userId;
+  final String title;
+  final DateTime startTime;
+  final DateTime endTime;
+  final CalendarType type; // personal, professional
+  final List<String> invitedUserIds;
+  final String? location;
+  final ActivityStatus status;
+}
+
+class Message extends Equatable {
+  final String id;
+  final String senderId;
+  final String receiverId;
+  final String content;
+  final DateTime timestamp;
+  final bool isRead;
+  final MessageType type; // text, activity_invitation
+}
+class Notification extends Equatable {
+  final String id;
+  final String userId;
+  final NotificationType type; // friend_request, message, event_update
+  final String content;
+  final Map<String, dynamic> data;
+  final bool isRead;
+  final DateTime createdAt;
+}
+
+enum EventCategory { music, sports, problem, social, other }
+enum EventSubCategory { rock, rap, football, waterLeak, etc... }
+enum CalendarType { personal, professional }
+enum ActivityStatus { pending, accepted, declined }
+enum NotificationType { friendRequest, message, eventUpdate, activityInvite }
+enum MessageType { text, activityInvitation }
+
+IV. Feature Modules Breakdown
+Module 1: Authentication
+Files to Create:
+
+domain/usecases/auth/sign_in_usecase.dart
+domain/usecases/auth/sign_up_usecase.dart
+domain/usecases/auth/sign_out_usecase.dart
+domain/repositories/auth_repository.dart
+data/repositories/auth_repository_impl.dart
+data/datasources/remote/auth_remote_datasource.dart
+data/datasources/remote/fake_auth_remote_datasource.dart (Mock)
+presentation/bloc/auth/auth_bloc.dart
+presentation/bloc/auth/auth_event.dart
+presentation/bloc/auth/auth_state.dart
+presentation/pages/auth/login_page.dart
+presentation/pages/auth/signup_page.dart
+
+Mock Implementation:
+
+class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
+  final Map<String, Map<String, dynamic>> _users = {};
+  
+  @override
+  Future<UserModel> signIn(String email, String password) async {
+    await Future.delayed(Duration(seconds: 1));
+    if (_users.containsKey(email)) {
+      return UserModel.fromJson(_users[email]!);
+    }
+    throw ServerException();
+  }
+  
+  @override
+  Future<UserModel> signUp(String email, String password, String name) async {
+    await Future.delayed(Duration(seconds: 1));
+    final user = UserModel(...);
+    _users[email] = user.toJson();
+    return user;
+  }
+}Module 2: Map & Events
+Files to Create:
+
+domain/usecases/events/create_event_usecase.dart
+domain/usecases/events/get_nearby_events_usecase.dart
+domain/usecases/events/verify_event_usecase.dart
+domain/usecases/events/update_event_usecase.dart
+domain/repositories/event_repository.dart
+data/repositories/event_repository_impl.dart
+data/datasources/remote/fake_event_remote_datasource.dart
+presentation/bloc/map/map_bloc.dart
+presentation/bloc/event/event_bloc.dart
+presentation/pages/map/map_home_page.dart
+presentation/pages/event/create_event_page.dart
+presentation/pages/event/event_detail_page.dart
+presentation/widgets/map/custom_map_pin.dart
+presentation/widgets/event/event_card.dart
+presentation/widgets/event/category_selector.dart
+
+class FakeEventRemoteDataSource {
+  final List<EventModel> _events = [
+    EventModel(
+      id: '1',
+      title: 'Concert de Rock',
+      category: EventCategory.music,
+      location: GeoPoint(46.5802, 0.3337), // Mignaloux-Beauvoir
+      // ... other fields
+    ),
+    // Add 20-30 fake events around the area
+  ];
+  
+  @override
+  Future<List<EventModel>> getNearbyEvents(GeoPoint center, double radiusKm) {
+    // Filter _events by distance from center
+    return Future.delayed(
+      Duration(milliseconds: 500),
+      () => _events.where((e) => _isWithinRadius(e, center, radiusKm)).toList()
+    );
+  }
+}
+
+Module 3: Social Features (Friends & Profiles)
+Files to Create:
+
+domain/usecases/social/send_friend_request_usecase.dart
+domain/usecases/social/accept_friend_request_usecase.dart
+domain/usecases/social/get_user_profile_usecase.dart
+domain/usecases/social/update_profile_usecase.dart
+domain/usecases/social/search_users_usecase.dart
+domain/repositories/social_repository.dart
+data/repositories/social_repository_impl.dart
+data/datasources/remote/fake_social_remote_datasource.dart
+presentation/bloc/profile/profile_bloc.dart
+presentation/bloc/friends/friends_bloc.dart
+presentation/pages/profile/profile_page.dart
+presentation/pages/profile/edit_profile_page.dart
+presentation/pages/social/search_page.dart
+presentation/widgets/social/user_card.dart
+
+Module 4: Calendar & Availability
+Files to Create:
+
+domain/usecases/calendar/get_availability_usecase.dart
+domain/usecases/calendar/create_activity_usecase.dart
+domain/usecases/calendar/invite_to_activity_usecase.dart
+domain/usecases/calendar/sync_calendar_usecase.dart
+domain/repositories/calendar_repository.dart
+data/repositories/calendar_repository_impl.dart
+data/datasources/remote/fake_calendar_remote_datasource.dart
+presentation/bloc/calendar/calendar_bloc.dart
+presentation/pages/calendar/calendar_page.dart
+presentation/widgets/calendar/activity_card.dart
+presentation/widgets/calendar/time_picker_wheel.dart
+
+class FakeCalendarRemoteDataSource {
+  final Map<String, List<CalendarActivityModel>> _activities = {
+    'user123': [
+      CalendarActivityModel(
+        id: '1',
+        title: 'Work Meeting',
+        startTime: DateTime.now().add(Duration(hours: 2)),
+        endTime: DateTime.now().add(Duration(hours: 3)),
+        type: CalendarType.professional,
+      ),
+    ],
+  };
+  
+  @override
+  Future<List<String>> getAvailableFriends(String userId, DateTime slot) {
+    // Return list of friend IDs who are available
+  }
+}
+Module 5: Messaging
+Files to Create:
+
+domain/usecases/messaging/send_message_usecase.dart
+domain/usecases/messaging/get_conversations_usecase.dart
+domain/usecases/messaging/get_messages_usecase.dart
+domain/repositories/messaging_repository.dart
+data/repositories/messaging_repository_impl.dart
+data/datasources/remote/fake_messaging_remote_datasource.dart
+presentation/bloc/messaging/messaging_bloc.dart
+presentation/pages/messaging/conversations_page.dart
+presentation/pages/messaging/chat_page.dart
+
+Module 6: Notifications
+Files to Create:
+
+domain/usecases/notifications/get_notifications_usecase.dart
+domain/usecases/notifications/mark_as_read_usecase.dart
+domain/repositories/notification_repository.dart
+data/repositories/notification_repository_impl.dart
+data/datasources/remote/fake_notification_remote_datasource.dart
+presentation/bloc/notifications/notifications_bloc.dart
+presentation/pages/notifications/notifications_page.dart
+
+Module 7: Search & Filters
+Files to Create:
+
+domain/usecases/search/search_events_usecase.dart
+domain/usecases/search/search_users_usecase.dart
+domain/usecases/search/filter_events_usecase.dart
+presentation/bloc/search/search_bloc.dart
+presentation/pages/search/search_page.dart
+presentation/widgets/search/filter_bottom_sheet.dart
+
+
+V. Step-by-Step Implementation Plan
+Phase 1: Foundation (Days 1-3)
+Step 1.1: Project Setup
+// Create Flutter project
+flutter create redemton_app --org com.redemton
+
+// Add all dependencies to pubspec.yaml
+// Run flutter pub get
+
+Step 1.2: Core Infrastructure
+
+Create folder structure as defined in Section I.A
+Implement core utilities:
+
+core/error/exceptions.dart - Define custom exceptions
+core/error/failures.dart - Define failure classes with Either<Failure, Success>
+core/usecases/usecase.dart - Abstract usecase class
+core/network/network_info.dart - Check connectivity
+
+
+Implement theme:
+
+core/theme/app_theme.dart - Define ThemeData
+core/constants/app_colors.dart - Color palette
+
+
+Setup dependency injection:
+
+// injection_container.dart
+   @InjectableInit()
+   void configureDependencies() => $initGetIt(getIt);
+
+Step 1.3: Core Models & Entities
+
+Create all domain entities from Section III.A
+Implement Equatable for each entity
+Add copyWith methods for immutability
+
+Phase 2: Authentication Module (Days 4-6)
+Step 2.1: Domain Layer
+
+// domain/repositories/auth_repository.dart
+abstract class AuthRepository {
+  Future<Either<Failure, User>> signIn(String email, String password);
+  Future<Either<Failure, User>> signUp(String email, String password, String name);
+  Future<Either<Failure, void>> signOut();
+  Future<Either<Failure, User?>> getCurrentUser();
+}
+
+// domain/usecases/auth/sign_in_usecase.dart
+class SignInUseCase implements UseCase<User, SignInParams> {
+  final AuthRepository repository;
+  
+  SignInUseCase(this.repository);
+  
+  @override
+  Future<Either<Failure, User>> call(SignInParams params) {
+    return repository.signIn(params.email, params.password);
+  }
+}
+
+Step 2.2: Data Layer
+
+Create data/models/user_model.dart extending User entity with JSON serialization
+Implement FakeAuthRemoteDataSource with in-memory user storage
+Implement AuthRepositoryImpl with error handling and Either wrapping
+
+Step 2.3: Presentation Layer
+
+// presentation/bloc/auth/auth_bloc.dart
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  final SignInUseCase signInUseCase;
+  final SignUpUseCase signUpUseCase;
+  final SignOutUseCase signOutUseCase;
+  
+  AuthBloc({
+    required this.signInUseCase,
+    required this.signUpUseCase,
+    required this.signOutUseCase,
+  }) : super(AuthInitial()) {
+    on<SignInRequested>(_onSignInRequested);
+    on<SignUpRequested>(_onSignUpRequested);
+    on<SignOutRequested>(_onSignOutRequested);
+  }
+  
+  Future<void> _onSignInRequested(
+    SignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    final result = await signInUseCase(SignInParams(
+      email: event.email,
+      password: event.password,
+    ));
+    
+    result.fold(
+      (failure) => emit(AuthError(message: _mapFailureToMessage(failure))),
+      (user) => emit(Authenticated(user: user)),
+    );
+  }
+}
+
+Step 2.4: UI Implementation
+
+Create login_page.dart with:
+
+Email and password TextFields
+Validation using Flutter Form
+BlocBuilder for state management
+Navigation to home on success
+
+
+Create signup_page.dart similarly
+Add loading indicators and error messages
+
+Phase 3: Map & Events Module (Days 7-12)
+Step 3.1: Setup Google Maps
+
+// presentation/pages/map/map_home_page.dart
+class MapHomePage extends StatefulWidget {
+  @override
+  _MapHomePageState createState() => _MapHomePageState();
+}
+
+class _MapHomePageState extends State<MapHomePage> {
+  late GoogleMapController _mapController;
+  final Set<Marker> _markers = {};
+  
+  static const _initialPosition = CameraPosition(
+    target: LatLng(46.5802, 0.3337), // Mignaloux-Beauvoir
+    zoom: 15,
+  );
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: BlocBuilder<EventBloc, EventState>(
+        builder: (context, state) {
+          if (state is EventsLoaded) {
+            _updateMarkers(state.events);
+          }
+          return GoogleMap(
+            initialCameraPosition: _initialPosition,
+            markers: _markers,
+            mapType: MapType.satellite, // 3D satellite view
+            onMapCreated: _onMapCreated,
+          );
+        },
+      ),
+      floatingActionButton: _buildCenterButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+}
+
+Step 3.2: Event Creation Flow
+
+Create create_event_page.dart with:
+
+Title TextField (top)
+Category selector with colored map pins
+Subcategory dropdown
+Photo picker (+ button)
+Description TextField (200 char limit with counter)
+Date/Time wheel picker (scrollable hours/days)
+Validate button
+
+
+Implement custom widgets:
+
+CategorySelectorWidget - Grid of colored map pin icons
+TimeWheelPicker - Scrollable wheel for time selection
+PhotoPickerButton - Handles image selection
+
+
+
+Step 3.3: Event Display & Interaction
+
+// presentation/widgets/event/event_bottom_sheet.dart
+class EventBottomSheet extends StatelessWidget {
+  final Event event;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Event image
+          if (event.photoUrl != null) CachedNetworkImage(...),
+          // Title
+          Text(event.title, style: Theme.of(context).textTheme.headline6),
+          // Category badge
+          CategoryBadge(category: event.category),
+          // Description
+          Text(event.description),
+          // Time info
+          if (event.startTime != null) TimeInfo(...),
+          // Action buttons
+          Row(
+            children: [
+              IconButton(icon: Icon(Icons.favorite_border)),
+              Spacer(),
+              // For events without end time (like water leaks)
+              if (event.endTime == null) _buildVerificationButtons(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildVerificationButtons() {
+    return Row(
+      children: [
+        Text('Event still active?'),
+        TextButton(child: Text('YES'), onPressed: () => _verify(true)),
+        TextButton(child: Text('NO'), onPressed: () => _verify(false)),
+      ],
+    );
+  }
+}
+
+// data/datasources/remote/fake_event_remote_datasource.dart
+class FakeEventRemoteDataSource implements EventRemoteDataSource {
+  final List<EventModel> _events = [
+    EventModel(
+      id: uuid.v4(),
+      creatorId: 'user123',
+      title: 'Concert de Rock au Centre-Ville',
+      description: 'Super concert avec des groupes locaux',
+      category: EventCategory.music,
+      subCategory: MusicSubCategory.rock,
+      location: GeoPoint(46.5802, 0.3337),
+      startTime: DateTime.now().add(Duration(days: 2, hours: 20)),
+      endTime: DateTime.now().add(Duration(days: 2, hours: 23)),
+      photoUrl: 'https://picsum.photos/400/300?random=1',
+      isActive: true,
+      verificationCount: 0,
+      createdAt: DateTime.now(),
+    ),
+    EventModel(
+      id: uuid.v4(),
+      creatorId: 'user456',
+      title: 'Fuite d\'eau Rue de la Paix',
+      description: 'Grande fuite d\'eau nécessitant intervention urgente',
+      category: EventCategory.problem,
+      subCategory: ProblemSubCategory.waterLeak,
+      location: GeoPoint(46.5815, 0.3350),
+      startTime: DateTime.now().subtract(Duration(hours: 2)),
+      endTime: null, // No end time - needs verification
+      photoUrl: 'https://picsum.photos/400/300?random=2',
+      isActive: true,
+      verificationCount: 5,
+      createdAt: DateTime.now().subtract(Duration(hours: 2)),
+    ),
+    // Add 20-30 more events
+  ];
+  
+  @override
+  Future<List<EventModel>> getNearbyEvents(
+    GeoPoint center,
+    double radiusKm,
+    {EventCategory? category}
+  ) async {
+    await Future.delayed(Duration(milliseconds: 800));
+    
+    return _events.where((event) {
+      final distance = _calculateDistance(
+        center.latitude, center.longitude,
+        event.location.latitude, event.location.longitude,
+      );
+      final withinRadius = distance <= radiusKm;
+      final matchesCategory = category == null || event.category == category;
+      return withinRadius && matchesCategory && event.isActive;
+    }).toList();
+  }
+  
+  @override
+  Future<EventModel> createEvent(EventModel event) async {
+    await Future.delayed(Duration(milliseconds: 500));
+    _events.add(event);
+    return event;
+  }
+  
+  @override
+  Future<void> verifyEvent(String eventId, bool stillActive) async {
+    await Future.delayed(Duration(milliseconds: 300));
+    final index = _events.indexWhere((e) => e.id == eventId);
+    if (index != -1) {
+      final event = _events[index];
+      if (!stillActive) {
+        _events[index] = event.copyWith(isActive: false);
+      } else {
+        _events[index] = event.copyWith(
+          verificationCount: event.verificationCount + 1,
+        );
+      }
+    }
+  }
+}
+
+// presentation/pages/main/main_page.dart
+class MainPage extends StatefulWidget {
+  @override
+  _MainPageState createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  int _selectedIndex = 0;
+  
+  final List<Widget> _pages = [
+    MapHomePage(), // Home (map)
+    SearchPage(), // Search (left of +)
+    Container(), // Placeholder for + button
+    ConversationsPage(), // Messages (right of +)
+    ProfilePage(), // Profile
+  ];
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_selectedIndex],
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => CreateEventPage()),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        shape: CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: Icon(Icons.home),
+              onPressed: () => setState(() => _selectedIndex = 0),
+            ),
+            IconButton(
+              icon: Icon(Icons.search),
+              onPressed: () => setState(() => _selectedIndex = 1),
+            ),
+            SizedBox(width: 48), // Space for FAB
+            Stack(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.message),
+                  onPressed: () => setState(() => _selectedIndex = 3),
+                ),
+                BlocBuilder<MessagingBloc, MessagingState>(
+                  builder: (context, state) {
+                    if (state is MessagesLoaded && state.unreadCount > 0) {
+                      return Positioned(
+                        right: 8,
+                        top: 8,
+                        child: NotificationBadge(count: state.unreadCount),
+                      );
+                    }
+                    return SizedBox.shrink();
+                  },
+                ),
+              ],
+            ),
+            IconButton(
+              icon: Icon(Icons.person),
+              onPressed: () => setState(() => _selectedIndex = 4),
+            ),
+          ],
+        ),
+      ),
+      appBar: _selectedIndex == 0 ? _buildMapAppBar() : null,
+    );
+  }
+  
+  AppBar _buildMapAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: Stack(
+        children: [
+          IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NotificationsPage()),
+            ),
+          ),
+          BlocBuilder<NotificationsBloc, NotificationsState>(
+            builder: (context, state) {
+              if (state is NotificationsLoaded && state.unreadCount > 0) {
+                return Positioned(
+                  right: 8,
+                  top: 8,
+                  child: NotificationBadge(count: state.unreadCount),
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// presentation/pages/profile/profile_page.dart
+class ProfilePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        if (state is ProfileLoaded) {
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: _buildProfileHeader(state.user),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.settings),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => SettingsPage()),
+                    ),
+                  ),
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    _buildPrivacyToggle(state.user),
+                    _buildInterests(state.user),
+                    _buildCalendarSection(),
+                    _buildEditButton(),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+  
+  Widget _buildPrivacyToggle(User user) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ChoiceChip(
+          label: Text('Private'),
+          selected: !user.isPublic,
+          onSelected: (selected) => _updatePrivacy(false),
+        ),
+        SizedBox(width: 8),
+        ChoiceChip(
+          label: Text('Public'),
+          selected: user.isPublic,
+          onSelected: (selected) => _updatePrivacy(true),
+        ),
+      ],
+    );
+  }
+}
+
+// presentation/pages/social/search_page.dart
+class SearchPage extends StatefulWidget {
+  @override
+  _SearchPageState createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  final _searchController = TextEditingController();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Search events or people...',
+            border: InputBorder.none,
+          ),
+          onChanged: (query) {
+            context.read<SearchBloc>().add(SearchQueryChanged(query));
+          },
+        ),
+      ),
+      body: Column(
+        children: [
+          _buildQuickActions(),
+          _buildSearchResults(),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildQuickActions() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Wrap(
+        spacing: 8,
+        children: [
+          ActionChip(
+            label: Text('Recent'),
+            onPressed: () => _showRecent(),
+          ),
+          ActionChip(
+            label: Text('Favorite Places'),
+            onPressed: () => _showFavorites(),
+          ),
+          ActionChip(
+            label: Text('Share Location'),
+            onPressed: () => _shareLocation(),
+          ),
+          ActionChip(
+            label: Text('Report Problem'),
+            onPressed: () => _reportProblem(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// data/datasources/remote/fake_social_remote_datasource.dart
+class FakeSocialRemoteDataSource {
+  final List<UserModel> _users = [
+    UserModel(
+      id: 'user123',
+      email: 'alice@example.com',
+      profileName: 'Alice Martin',
+      photoUrl: 'https://i.pravatar.cc/150?img=1',
+      isPublic: true,
+      interests: ['music', 'sports'],
+      friendIds: ['user456', 'user789'],
+      createdAt: DateTime.now().subtract(Duration(days: 30)),
+    ),
+    // Add 20-30 fake users
+  ];
+  
+  final Map<String, List<FriendRequestModel>> _friendRequests = {};
+  
+  @override
+  Future<List<UserModel>> searchUsers(String query) async {
+    await Future.delayed(Duration(milliseconds: 500));
+    return _users.where((user) =>
+      user.profileName.toLowerCase().contains(query.toLowerCase()) ||
+      user.email.toLowerCase().contains(query.toLowerCase())
+    ).toList();
+  }
+  
+  @override
+  Future<void> sendFriendRequest(String fromUserId, String toUserId) async {
+    await Future.delayed(Duration(milliseconds: 300));
+    _friendRequests.putIfAbsent(toUserId, () => []);
+    _friendRequests[toUserId]!.add(FriendRequestModel(
+      id: uuid.v4(),
+      fromUserId: fromUserId,
+      toUserId: toUserId,
+      status: FriendRequestStatus.pending,
+      createdAt: DateTime.now(),
+    ));
+  }
+}*
+
+// presentation/pages/calendar/calendar_page.dart
+class CalendarPage extends StatefulWidget {
+  @override
+  _CalendarPageState createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends State<CalendarPage> {
+  DateTime _selectedDay = DateTime.now();
+  CalendarFormat _calendarFormat = CalendarFormat.week;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Calendar'),
+        actions: [
+          TextButton(
+            child: Text('Day'),
+            onPressed: () => setState(() => _calendarFormat = CalendarFormat.week),
+          ),
+          TextButton(
+            child: Text('Week'),
+            onPressed: () => setState(() => _calendarFormat = CalendarFormat.twoWeeks),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.now().subtract(Duration(days: 365)),
+            lastDay: DateTime.now().add(Duration(days: 365)),
+            focusedDay: _selectedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() => _selectedDay = selectedDay);
+              context.read<CalendarBloc>().add(
+                DaySelected(date: selectedDay),
+              );
+            },
+            eventLoader: _getEventsForDay,
+          ),
+          Expanded(
+            child: BlocBuilder<CalendarBloc, CalendarState>(
+              builder: (context, state) {
+                if (state is CalendarLoaded) {
+                  return _buildActivitiesList(state.activities);
+                }
+                return Center(child: CircularProgressIndicator());
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () => _showAddActivityDialog(),
+      ),
+    );
+  }
+  
+  Widget _buildActivitiesList(List<CalendarActivity> activities) {
+    if (activities.isEmpty) {
+      return BlocBuilder<FriendsBloc, FriendsState>(
+        builder: (context, state) {
+          if (state is FriendsLoaded) {
+            final availableFriends = state.friends.where((f) =>
+              _isAvailable(f, _selectedDay)
+            ).toList();
+            
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('${availableFriends.length} friends available'),
+                ElevatedButton(
+                  child: Text('See who'),
+                  onPressed: () => _showAvailableFriends(availableFriends),
+                ),
+              ],
+            );
+          }
+          return SizedBox.shrink();
+        },
+      );
+    }
+    
+    return ListView.builder(
+      itemCount: activities.length,
+      itemBuilder: (context, index) {
+        return ActivityCard(activity: activities[index]);
+      },
+    );
+  }
+  
+  void _showAddActivityDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => AddActivitySheet(selectedDate: _selectedDay),
+    );
+  }
+}
+
+// presentation/widgets/calendar/add_activity_sheet.dart
+class AddActivitySheet extends StatefulWidget {
+  final DateTime selectedDate;
+  
+  @override
+  _AddActivitySheetState createState() => _AddActivitySheetState();
+}
+
+class _AddActivitySheetState extends State<AddActivitySheet> {
+  final _titleController = TextEditingController();
+  final _locationController = TextEditingController();
+  DateTime? _startTime;
+  DateTime? _endTime;
+  final Set<String> _selectedFriendIds = {};
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          TextField(
+            controller: _titleController,
+            decoration: InputDecoration(labelText: 'Activity'),
+          ),
+          TextField(
+            controller: _locationController,
+            decoration: InputDecoration(labelText: 'Location'),
+          ),
+          _buildTimeWheelPicker(),
+          _buildFriendSelector(),
+          Row(
+            children: [
+              TextButton(
+                child: Text('Group Call'),
+                onPressed: () => _initiateGroupCall(),
+              ),
+              TextButton(
+                child: Text('Send Message'),
+                onPressed: () => _sendInstantMessage(),
+              ),
+            ],
+          ),
+          ElevatedButton(
+            child: Text('Send Invitation'),
+            onPressed: () => _sendActivityInvitation(),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildFriendSelector() {
+    return BlocBuilder<FriendsBloc, FriendsState>(
+      builder: (context, state) {
+        if (state is FriendsLoaded) {
+          return Column(
+            children: [
+              CheckboxListTile(
+                title: Text('Select All'),
+                value: _selectedFriendIds.length == state.friends.length,
+                onChanged: (value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedFriendIds.addAll(
+                        state.friends.map((f) => f.id),
+                      );
+                    } else {
+                      _selectedFriendIds.clear();
+                    }
+                  });
+                },
+              ),
+              ...state.friends.map((friend) => CheckboxListTile(
+                title: Text(friend.profileName),
+                subtitle: _isAvailableAtTime(friend) 
+                  ? Text('Available', style: TextStyle(color: Colors.green))
+                  : Text('Busy', style: TextStyle(color: Colors.red)),
+                value: _selectedFriendIds.contains(friend.id),
+                onChanged: (value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedFriendIds.add(friend.id);
+                    } else {
+                      _selectedFriendIds.remove(friend.id);
+                    }
+                  });
+                },
+              )),
+            ],
+          );
+        }
+        return SizedBox.shrink();
+      },
+    );
+  }
+}
+
+// presentation/pages/messaging/conversations_page.dart
+class ConversationsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Messages')),
+      body: BlocBuilder<MessagingBloc, MessagingState>(
+        builder: (context, state) {
+          if (state is ConversationsLoaded) {
+            return ListView.builder(
+              itemCount: state.conversations.length,
+              itemBuilder: (context, index) {
+                final conversation = state.conversations[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: NetworkImage(
+                      conversation.otherUser.photoUrl ?? '',
+                    ),
+                  ),
+                  title: Text(
+                    conversation.otherUser.profileName,
+                    style: conversation.hasUnread
+                      ? TextStyle(fontWeight: FontWeight.bold)
+                      : null,
+                  ),
+                  subtitle: Text(
+                    conversation.lastMessage.content,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(_formatTime(conversation.lastMessage.timestamp)),
+                      if (conversation.unreadCount > 0)
+                        Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${conversation.unreadCount}',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                    ],
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatPage(userId: conversation.otherUser.id),
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+          return Center(child: CircularProgressIndicator());
+        },
+      ),
+    );
+  }
+}
+
+// presentation/pages/messaging/chat_page.dart
+class ChatPage extends StatefulWidget {
+  final String userId;
+  
+  @override
+  _ChatPageState createState() => _ChatPageState();
+}
+
+class _ChatPageState extends State<ChatPage> {
+  final _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (context, state) {
+            if (state is ProfileLoaded) {
+              return Text(state.user.profileName);
+            }
+            return Text('Chat');
+          },
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: BlocBuilder<MessagingBloc, MessagingState>(
+              builder: (context, state) {
+                if (state is MessagesLoaded) {
+                  return ListView.builder(
+                    controller: _scrollController,
+                    reverse: true,
+                    itemCount: state.messages.length,
+                    itemBuilder: (context, index) {
+                      final message = state.messages[index];
+                      return MessageBubble(message: message);
+                    },
+                  );
+                }
+                return Center(child: CircularProgressIndicator());
+              },
+            ),
+          ),
+          _buildMessageInput(),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildMessageInput() {
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(0, -2),
+            blurRadius: 4,
+            color: Colors.black12,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                hintText: 'Type a message...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.send),
+            onPressed: () {
+              if (_messageController.text.isNotEmpty) {
+                context.read<MessagingBloc>().add(
+                  SendMessage(
+                    receiverId: widget.userId,
+                    content: _messageController.text,
+                  ),
+                );
+                _messageController.clear();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// data/datasources/remote/fake_messaging_remote_datasource.dart
+class FakeMessagingRemoteDataSource {
+  final Map<String, List<MessageModel>> _conversations = {
+    'conversation_user123_user456': [
+      MessageModel(
+        id: '1',
+        senderId: 'user456',
+        receiverId: 'user123',
+        content: 'Salut! Ça va?',
+        timestamp: DateTime.now().subtract(Duration(minutes: 30)),
+        isRead: true,
+        type: MessageType.text,
+      ),
+      MessageModel(
+        id: '2',
+        senderId: 'user123',
+        receiverId: 'user456',
+        content: 'Oui super! Et toi?',
+        timestamp: DateTime.now().subtract(Duration(minutes: 28)),
+        isRead: true,
+        type: MessageType.text,
+      ),
+    ],
+  };
+  
+  @override
+  Future<List<MessageModel>> getMessages(String userId, String otherUserId) async {
+    await Future.delayed(Duration(milliseconds: 500));
+    final conversationKey = _getConversationKey(userId, otherUserId);
+    return _conversations[conversationKey] ?? [];
+  }
+  
+  @override
+  Future<MessageModel> sendMessage(MessageModel message) async {
+    await Future.delayed(Duration(milliseconds: 300));
+    final conversationKey = _getConversationKey(
+      message.senderId,
+      message.receiverId,
+    );
+    _conversations.putIfAbsent(conversationKey, () => []);
+    _conversations[conversationKey]!.add(message);
+    return message;
+  }
+  
+  String _getConversationKey(String userId1, String userId2) {
+    final ids = [userId1, userId2]..sort();
+    return 'conversation_${ids[0]}_${ids[1]}';
+  }
+}
+
+// presentation/pages/notifications/notifications_page.dart
+class NotificationsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Notifications'),
+        actions: [
+          TextButton(
+            child: Text('Mark all read'),
+            onPressed: () {
+              context.read<NotificationsBloc>().add(MarkAllAsRead());
+            },
+          ),
+        ],
+      ),
+      body: BlocBuilder<NotificationsBloc, NotificationsState>(
+        builder: (context, state) {
+          if (state is NotificationsLoaded) {
+            if (state.notifications.isEmpty) {
+              return Center(child: Text('No notifications'));
+            }
+            
+            return ListView.builder(
+              itemCount: state.notifications.length,
+              itemBuilder: (context, index) {
+                final notification = state.notifications[index];
+                return NotificationTile(notification: notification);
+              },
+            );
+          }
+          return Center(child: CircularProgressIndicator());
+        },
+      ),
+    );
+  }
+}
+
+// presentation/widgets/notifications/notification_tile.dart
+class NotificationTile extends StatelessWidget {
+  final Notification notification;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: notification.isRead ? Colors.white : Colors.blue[50],
+      child: ListTile(
+        leading: _buildIcon(),
+        title: Text(notification.content),
+        subtitle: Text(_formatTime(notification.createdAt)),
+        trailing: notification.type == NotificationType.friendRequest
+          ? _buildFriendRequestActions(context)
+          : null,
+        onTap: () => _handleNotificationTap(context),
+      ),
+    );
+  }
+  
+  Widget _buildFriendRequestActions(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(Icons.check, color: Colors.green),
+          onPressed: () {
+            context.read<FriendsBloc>().add(
+              AcceptFriendRequest(
+                requestId: notification.data['requestId'],
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: Icon(Icons.close, color: Colors.red),
+          onPressed: () {
+            context.read<FriendsBloc>().add(
+              DeclineFriendRequest(
+                requestId: notification.data['requestId'],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// presentation/widgets/search/filter_bottom_sheet.dart
+class FilterBottomSheet extends StatefulWidget {
+  @override
+  _FilterBottomSheetState createState() => _FilterBottomSheetState();
+}
+
+class _FilterBottomSheetState extends State<FilterBottomSheet> {
+  EventCategory? _selectedCategory;
+  EventSubCategory? _selectedSubCategory;
+
+@override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Filter Events',
+            style: Theme.of(context).textTheme.headline6,
+          ),
+          SizedBox(height: 16),
+          Text('Category'),
+          Wrap(
+            spacing: 8,
+            children: EventCategory.values.map((category) {
+              return ChoiceChip(
+                label: Text(_getCategoryName(category)),
+                selected: _selectedCategory == category,
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedCategory = selected ? category : null;
+                    _selectedSubCategory = null;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          if (_selectedCategory != null) ...[
+            SizedBox(height: 16),
+            Text('Subcategory'),
+            Wrap(
+              spacing: 8,
+              children: _getSubCategories(_selectedCategory!).map((sub) {
+                return ChoiceChip(
+                  label: Text(sub.name),
+                  selected: _selectedSubCategory == sub,
+                  onSelected: (selected) {
+                    setState(() => _selectedSubCategory = selected ? sub : null);
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+          Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  child: Text('Clear'),
+                  onPressed: () {
+                    setState(() {
+                      _selectedCategory = null;
+                      _selectedSubCategory = null;
+                    });
+                  },
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  child: Text('Apply'),
+                  onPressed: () {
+                    context.read<SearchBloc>().add(
+                      FilterApplied(
+                        category: _selectedCategory,
+                        subCategory: _selectedSubCategory,
+                      ),
+                    );
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// presentation/pages/search/search_results_page.dart
+class SearchResultsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SearchBloc, SearchState>(
+      builder: (context, state) {
+        if (state is SearchLoading) {
+          return Center(child: CircularProgressIndicator());
+        }
+        
+        if (state is SearchLoaded) {
+          return CustomScrollView(
+            slivers: [
+              if (state.events.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Events (${state.events.length})',
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => EventCard(
+                      event: state.events[index],
+                    ),
+                    childCount: state.events.length,
+                  ),
+                ),
+              ],
+              if (state.users.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'People (${state.users.length})',
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => UserCard(
+                      user: state.users[index],
+                    ),
+                    childCount: state.users.length,
+                  ),
+                ),
+              ],
+            ],
+          );
+        }
+        
+        return Center(child: Text('No results found'));
+      },
+    );
+  }
+}
+
+// presentation/pages/settings/settings_page.dart
+class SettingsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Settings')),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Edit Profile'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => EditProfilePage()),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.calendar_today),
+            title: Text('Connect Calendar'),
+            subtitle: Text('Sync with Google Calendar or Outlook'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => _showCalendarSyncDialog(context),
+          ),
+          ListTile(
+            leading: Icon(Icons.interests),
+            title: Text('Interests'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => InterestsPage()),
+            ),
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.notifications),
+            title: Text('Notification Settings'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NotificationSettingsPage()),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.location_on),
+            title: Text('Location Preferences'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => _showLocationPreferences(context),
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.description),
+            title: Text('Terms of Service'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => TermsPage()),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.privacy_tip),
+            title: Text('Privacy Policy'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PrivacyPage()),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.help),
+            title: Text('FAQ'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => FAQPage()),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.bug_report),
+            title: Text('Report a Problem'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () => _showReportDialog(context),
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.logout, color: Colors.red),
+            title: Text('Logout', style: TextStyle(color: Colors.red)),
+            onTap: () => _showLogoutDialog(context),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showCalendarSyncDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Connect Calendar'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.work),
+              title: Text('Professional Calendar'),
+              subtitle: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text('Personal Calendar'),
+              subtitle: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          ElevatedButton(
+            child: Text('Connect'),
+            onPressed: () {
+              // Mock connection
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Calendars connected (Mock)')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// presentation/pages/settings/interests_page.dart
+class InterestsPage extends StatefulWidget {
+  @override
+  _InterestsPageState createState() => _InterestsPageState();
+}
+
+class _InterestsPageState extends State<InterestsPage> {
+  final Set<String> _selectedInterests = {};
+  
+  final Map<String, List<String>> _interestCategories = {
+    'Music': ['Rock', 'Rap', 'Jazz', 'Classical', 'Electronic', 'Pop'],
+    'Sports': ['Football', 'Basketball', 'Tennis', 'Running', 'Cycling', 'Swimming'],
+    'Arts': ['Painting', 'Photography', 'Theater', 'Cinema', 'Literature'],
+    'Food': ['Cooking', 'Restaurants', 'Wine', 'Baking', 'Vegetarian'],
+    'Tech': ['Programming', 'Gaming', 'Gadgets', 'AI', 'Blockchain'],
+    'Outdoor': ['Hiking', 'Camping', 'Gardening', 'Travel', 'Nature'],
+  };
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Select Your Interests'),
+        actions: [
+          TextButton(
+            child: Text('Save'),
+            onPressed: () {
+              context.read<ProfileBloc>().add(
+                UpdateInterests(interests: _selectedInterests.toList()),
+              );
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        itemCount: _interestCategories.length,
+        itemBuilder: (context, index) {
+          final category = _interestCategories.keys.elementAt(index);
+          final interests = _interestCategories[category]!;
+          
+          return ExpansionTile(
+            title: Text(category),
+            children: interests.map((interest) {
+              final fullInterest = '$category:$interest';
+              return CheckboxListTile(
+                title: Text(interest),
+                value: _selectedInterests.contains(fullInterest),
+                onChanged: (selected) {
+                  setState(() {
+                    if (selected == true) {
+                      _selectedInterests.add(fullInterest);
+                    } else {
+                      _selectedInterests.remove(fullInterest);
+                    }
+                  });
+                },
+              );
+            }).toList(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// presentation/widgets/common/notification_badge.dart
+class NotificationBadge extends StatelessWidget {
+  final int count;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+// presentation/widgets/common/loading_overlay.dart
+class LoadingOverlay extends StatelessWidget {
+  final bool isLoading;
+  final Widget child;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        if (isLoading)
+          Container(
+            color: Colors.black45,
+            child: Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Loading...'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// presentation/widgets/common/custom_button.dart
+class CustomButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final Color? backgroundColor;
+  
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: isLoading ? null : onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor ?? Theme.of(context).primaryColor,
+        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: isLoading
+        ? SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          )
+        : Text(
+            text,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+    );
+  }
+}
+
+// presentation/widgets/animations/slide_up_transition.dart
+class SlideUpTransition extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  final Duration delay;
+  
+  @override
+  _SlideUpTransitionState createState() => _SlideUpTransitionState();
+}
+
+class _SlideUpTransitionState extends State<SlideUpTransition>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    ));
+    
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: widget.child,
+      ),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+// presentation/widgets/map/animated_map_pin.dart
+class AnimatedMapPin extends StatefulWidget {
+  final Color color;
+  final VoidCallback onTap;
+  
+  @override
+  _AnimatedMapPinState createState() => _AnimatedMapPinState();
+}
+
+class _AnimatedMapPinState extends State<AnimatedMapPin>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 300),
+    );
+    
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        _controller.forward().then((_) => _controller.reverse());
+        widget.onTap();
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Icon(
+          Icons.location_pin,
+          color: widget.color,
+          size: 40,
+        ),
+      ),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+// core/theme/app_theme.dart
+class AppTheme {
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Color(0xFF6366F1), // Indigo
+        brightness: Brightness.light,
+      ),
+      scaffoldBackgroundColor: Color(0xFFF8FAFC),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black87,
+      ),
+      cardTheme: CardTheme(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Color(0xFF6366F1), width: 2),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+    );
+  }
+}
+
+// test/domain/usecases/auth/sign_in_usecase_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
+import 'package:dartz/dartz.dart';
+
+@GenerateMocks([AuthRepository])
+void main() {
+  late SignInUseCase usecase;
+  late MockAuthRepository mockRepository;
+  
+  setUp(() {
+    mockRepository = MockAuthRepository();
+    usecase = SignInUseCase(mockRepository);
+  });
+  
+  group('SignInUseCase', () {
+    final tEmail = 'test@example.com';
+    final tPassword = 'password123';
+    final tUser = User(
+      id: '123',
+      email: tEmail,
+      profileName: 'Test User',
+      isPublic: true,
+      interests: [],
+      friendIds: [],
+      createdAt: DateTime.now(),
+    );
+    
+    test('should return User when sign in is successful', () async {
+      // arrange
+      when(mockRepository.signIn(tEmail, tPassword))
+          .thenAnswer((_) async => Right(tUser));
+      
+      // act
+      final result = await usecase(SignInParams(
+        email: tEmail,
+        password: tPassword,
+      ));
+      
+      // assert
+      expect(result, Right(tUser));
+      verify(mockRepository.signIn(tEmail, tPassword));
+      verifyNoMoreInteractions(mockRepository);
+    });
+    
+    test('should return Failure when sign in fails', () async {
+      // arrange
+      when(mockRepository.signIn(tEmail, tPassword))
+          .thenAnswer((_) async => Left(ServerFailure()));
+      
+      // act
+      final result = await usecase(SignInParams(
+        email: tEmail,
+        password: tPassword,
+      ));
+      
+      // assert
+      expect(result, Left(ServerFailure()));
+      verify(mockRepository.signIn(tEmail, tPassword));
+    });
+  });
+}
+
+// test/presentation/bloc/auth/auth_bloc_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:dartz/dartz.dart';
+
+void main() {
+  late AuthBloc bloc;
+  late MockSignInUseCase mockSignInUseCase;
+  late MockSignUpUseCase mockSignUpUseCase;
+  
+  setUp(() {
+    mockSignInUseCase = MockSignInUseCase();
+    mockSignUpUseCase = MockSignUpUseCase();
+    bloc = AuthBloc(
+      signInUseCase: mockSignInUseCase,
+      signUpUseCase: mockSignUpUseCase,
+      signOutUseCase: mockSignOutUseCase,
+    );
+  });
+  
+  group('AuthBloc', () {
+    final tUser = User(/* ... */);
+    
+    blocTest<AuthBloc, AuthState>(
+      'emits [AuthLoading, Authenticated] when SignInRequested is successful',
+      build: () {
+        when(mockSignInUseCase(any))
+            .thenAnswer((_) async => Right(tUser));
+        return bloc;
+      },
+      act: (bloc) => bloc.add(SignInRequested(
+        email: 'test@example.com',
+        password: 'password',
+      )),
+      expect: () => [
+        AuthLoading(),
+        Authenticated(user: tUser),
+      ],
+    );
+    
+    blocTest<AuthBloc, AuthState>(
+      'emits [AuthLoading, AuthError] when SignInRequested fails',
+      build: () {
+        when(mockSignInUseCase(any))
+            .thenAnswer((_) async => Left(ServerFailure()));
+        return bloc;
+      },
+      act: (bloc) => bloc.add(SignInRequested(
+        email: 'test@example.com',
+        password: 'wrong',
+      )),
+      expect: () => [
+        AuthLoading(),
+        AuthError(message: 'Server error'),
+      ],
+    );
+  });
+}
+
+// test/presentation/pages/auth/login_page_test.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mockito/mockito.dart';
+
+void main() {
+  late MockAuthBloc mockAuthBloc;
+  
+  setUp(() {
+    mockAuthBloc = MockAuthBloc();
+  });
+  
+  Widget makeTestableWidget(Widget body) {
+    return MaterialApp(
+      home: BlocProvider<AuthBloc>.value(
+        value: mockAuthBloc,
+        child: body,
+      ),
+    );
+  }
+  
+  group('LoginPage', () {
+    testWidgets('should display email and password fields', (tester) async {
+      // arrange
+      when(mockAuthBloc.state).thenReturn(AuthInitial());
+      
+      // act
+      await tester.pumpWidget(makeTestableWidget(LoginPage()));
+      
+      // assert
+      expect(find.byType(TextField), findsNWidgets(2));
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Password'), findsOneWidget);
+    });
+    
+    testWidgets('should show loading indicator when state is AuthLoading',
+        (tester) async {
+      // arrange
+      when(mockAuthBloc.state).thenReturn(AuthLoading());
+      
+      // act
+      await tester.pumpWidget(makeTestableWidget(LoginPage()));
+      await tester.pump();
+      
+      // assert
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+}
+
+// presentation/routes/app_router.dart
+class AppRouter {
+  static const String splash = '/';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String main = '/main';
+  static const String createEvent = '/create-event';
+  static const String eventDetail = '/event-detail';
+  static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
+  static const String search = '/search';
+  static const String chat = '/chat';
+  static const String notifications = '/notifications';
+  static const String settings = '/settings';
+  static const String calendar = '/calendar';
+  
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case splash:
+        return MaterialPageRoute(builder: (_) => SplashPage());
+      case login:
+        return MaterialPageRoute(builder: (_) => LoginPage());
+      case signup:
+        return MaterialPageRoute(builder: (_) => SignupPage());
+      case main:
+        return MaterialPageRoute(builder: (_) => MainPage());
+      case createEvent:
+        return MaterialPageRoute(builder: (_) => CreateEventPage());
+      case eventDetail:
+        final event = settings.arguments as Event;
+        return MaterialPageRoute(
+          builder: (_) => EventDetailPage(event: event),
+        );
+      case chat:
+        final userId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => ChatPage(userId: userId),
+        );
+      case profile:
+        final userId = settings.arguments as String?;
+        return MaterialPageRoute(
+          builder: (_) => ProfilePage(userId: userId),
+        );
+      default:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: Center(
+              child: Text('No route defined for ${settings.name}'),
+            ),
+          ),
+        );
+    }
+  }
+}
+
+// main.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase (mock for now)
+  // await Firebase.initializeApp();
+  
+  // Setup dependency injection
+  configureDependencies();
+  
+  runApp(RedemtonApp());
+}
+
+class RedemtonApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => getIt<AuthBloc>()..add(CheckAuthStatus()),
+        ),
+        BlocProvider(
+          create: (_) => getIt<EventBloc>()..add(LoadNearbyEvents()),
+        ),
+        BlocProvider(create: (_) => getIt<ProfileBloc>()),
+        BlocProvider(create: (_) => getIt<FriendsBloc>()),
+        BlocProvider(create: (_) => getIt<MessagingBloc>()),
+        BlocProvider(create: (_) => getIt<NotificationsBloc>()),
+        BlocProvider(create: (_) => getIt<SearchBloc>()),
+        BlocProvider(create: (_) => getIt<CalendarBloc>()),
+      ],
+      child: MaterialApp(
+        title: 'Redemton',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        onGenerateRoute: AppRouter.generateRoute,
+        initialRoute: AppRouter.splash,
+      ),
+    );
+  }
+}
+
+// presentation/pages/splash/splash_page.dart
+class SplashPage extends StatefulWidget {
+  @override
+  _SplashPageState createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthAndNavigate();
+  }
+  
+  Future<void> _checkAuthAndNavigate() async {
+    await Future.delayed(Duration(seconds: 2));
+    
+    final authState = context.read<AuthBloc>().state;
+    
+    if (authState is Authenticated) {
+      Navigator.pushReplacementNamed(context, AppRouter.main);
+    } else {
+      Navigator.pushReplacementNamed(context, AppRouter.login);
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF6366F1),
+              Color(0xFF8B5CF6),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Add your app logo here
+              Icon(
+                Icons.location_city,
+                size: 100,
+                color: Colors.white,
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Redemton',
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Connect with your neighborhood',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              ),
+              SizedBox(height: 48),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}	
+
+// injection_container.dart
+import 'package:get_it/get_it.dart';
+import 'package:injectable/injectable.dart';
+
+final getIt = GetIt.instance;
+
+@InjectableInit()
+void configureDependencies() {
+  // Core
+  getIt.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl());
+  
+  // Data sources - FAKE implementations for prototype
+  getIt.registerLazySingleton<AuthRemoteDataSource>(
+    () => FakeAuthRemoteDataSource(),
+  );
+  getIt.registerLazySingleton<EventRemoteDataSource>(
+    () => FakeEventRemoteDataSource(),
+  );
+  getIt.registerLazySingleton<SocialRemoteDataSource>(
+    () => FakeSocialRemoteDataSource(),
+  );
+  getIt.registerLazySingleton<MessagingRemoteDataSource>(
+    () => FakeMessagingRemoteDataSource(),
+  );
+  getIt.registerLazySingleton<CalendarRemoteDataSource>(
+    () => FakeCalendarRemoteDataSource(),
+  );
+  getIt.registerLazySingleton<NotificationRemoteDataSource>(
+    () => FakeNotificationRemoteDataSource(),
+  );
+  
+  // Repositories
+  getIt.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDataSource: getIt(),
+      networkInfo: getIt(),
+    ),
+  );
+  getIt.registerLazySingleton<EventRepository>(
+    () => EventRepositoryImpl(
+      remoteDataSource: getIt(),
+      networkInfo: getIt(),
+    ),
+  );
+  getIt.registerLazySingleton<SocialRepository>(
+    () => SocialRepositoryImpl(
+      remoteDataSource: getIt(),
+      networkInfo: getIt(),
+    ),
+  );
+  getIt.registerLazySingleton<MessagingRepository>(
+    () => MessagingRepositoryImpl(
+      remoteDataSource: getIt(),
+      networkInfo: getIt(),
+    ),
+  );
+  getIt.registerLazySingleton<CalendarRepository>(
+    () => CalendarRepositoryImpl(
+      remoteDataSource: getIt(),
+      networkInfo: getIt(),
+    ),
+  );
+  getIt.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      remoteDataSource: getIt(),
+      networkInfo: getIt(),
+    ),
+  );
+  
+  // Use cases
+  getIt.registerLazySingleton(() => SignInUseCase(getIt()));
+  getIt.registerLazySingleton(() => SignUpUseCase(getIt()));
+  getIt.registerLazySingleton(() => SignOutUseCase(getIt()));
+  getIt.registerLazySingleton(() => CreateEventUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetNearbyEventsUseCase(getIt()));
+  getIt.registerLazySingleton(() => SendFriendRequestUseCase(getIt()));
+  getIt.registerLazySingleton(() => AcceptFriendRequestUseCase(getIt()));
+  getIt.registerLazySingleton(() => SendMessageUseCase(getIt()));
+  getIt.registerLazySingleton(() => GetMessagesUseCase(getIt()));
+  getIt.registerLazySingleton() => GetAvailabilityUseCase(getIt()));
+  getIt.registerLazySingleton(() => CreateActivityUseCase(getIt()));
+  
+  // BLoCs
+  getIt.registerFactory(() => AuthBloc(
+    signInUseCase: getIt(),
+    signUpUseCase: getIt(),
+    signOutUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => EventBloc(
+    createEventUseCase: getIt(),
+    getNearbyEventsUseCase: getIt(),
+    verifyEventUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => ProfileBloc(
+    getUserProfileUseCase: getIt(),
+    updateProfileUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => FriendsBloc(
+    sendFriendRequestUseCase: getIt(),
+    acceptFriendRequestUseCase: getIt(),
+    getFriendsUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => MessagingBloc(
+    sendMessageUseCase: getIt(),
+    getMessagesUseCase: getIt(),
+    getConversationsUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => CalendarBloc(
+    getAvailabilityUseCase: getIt(),
+    createActivityUseCase: getIt(),
+    getActivitiesUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => NotificationsBloc(
+    getNotificationsUseCase: getIt(),
+    markAsReadUseCase: getIt(),
+  ));
+  getIt.registerFactory(() => SearchBloc(
+    searchEventsUseCase: getIt(),
+    searchUsersUseCase: getIt(),
+  ));
+}
+
+// core/error/error_handler.dart
+class ErrorHandler {
+  static String getErrorMessage(Failure failure) {
+    switch (failure.runtimeType) {
+      case ServerFailure:
+        return 'Server error. Please try again later.';
+      case NetworkFailure:
+        return 'No internet connection. Please check your network.';
+      case AuthFailure:
+        return 'Authentication failed. Please check your credentials.';
+      case ValidationFailure:
+        return (failure as ValidationFailure).message;
+      default:
+        return 'An unexpected error occurred.';
+    }
+  }
+  
+  static void showErrorSnackbar(BuildContext context, Failure failure) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(getErrorMessage(failure)),
+        backgroundColor: Colors.red,
+        action: SnackBarAction(
+          label: 'Dismiss',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+# Redemton - Location-Based Social Network
+
+## Overview
+Redemton is a Flutter-based social networking application focused on local events, friend connections, and community engagement.
+
+## Features
+- 🗺️ Interactive 3D satellite map with event markers
+- 📅 Integrated calendar with availability matching
+- 💬 Real-time messaging system
+- 👥 Friend management and social features
+- 🔍 Advanced search and filtering
+- 🔔 Smart notifications
+- 🎨 Modern, intuitive UI/UX
+
+## Architecture
+This project follows Clean Architecture principles with three main layers:
+- **Domain Layer**: Business logic and entities
+- **Data Layer**: Data sources and repository implementations
+- **Presentation Layer**: UI and state management (BLoC pattern)
+
+## Project Structure
+```
+lib/
+├── core/               # Core utilities and constants
+├── data/              # Data models and repositories
+├── domain/            # Business logic and entities
+├── presentation/      # UI components and BLoCs
+└── injection_container.dart
+```
+
+## Getting Started
+
+### Prerequisites
+- Flutter SDK (>=3.0.0)
+- Dart (>=3.0.0)
+- Android Studio / VS Code
+- Google Maps API Key (for production)
+
+### Installation
+1. Clone the repository
+```bash
+git clone https://github.com/yourcompany/redemton.git
+```
+
+2. Install dependencies
+```bash
+flutter pub get
+```
+
+3. Run the app
+```bash
+flutter run
+```
+
+### Running Tests
+```bash
+# Unit tests
+flutter test
+
+# Integration tests
+flutter test integration_test/
+```
+
+## Mock Data
+The current version uses fake data sources for prototyping:
+- `FakeAuthRemoteDataSource`: Mock authentication
+- `FakeEventRemoteDataSource`: 30+ sample events around Mignaloux-Beauvoir
+- `FakeSocialRemoteDataSource`: Sample users and friend connections
+- `FakeMessagingRemoteDataSource`: Mock messaging system
+- `FakeCalendarRemoteDataSource`: Sample calendar activities
+
+## Firebase Integration (TODO)
+To integrate with real Firebase:
+1. Replace fake data sources in `injection_container.dart`
+2. Add Firebase configuration files
+3. Update repository implementations
+4. Configure Firestore security rules
+
+## Key Dependencies
+- `flutter_bloc`: State management
+- `get_it` & `injectable`: Dependency injection
+- `google_maps_flutter`: Map integration
+- `dartz`: Functional programming (Either)
+- `table_calendar`: Calendar UI
+- `cached_network_image`: Image caching
+- `geolocator`: Location services
+
+## Contributing
+1. Create a feature branch
+2. Implement your feature following Clean Architecture
+3. Write tests
+4. Submit a pull request
+
+## License
+Proprietary - All rights reserved
+
+## Contact
+- Email: contact@redemton.com
+- Website: https://redemton.com
+/// Repository for managing authentication operations.
+///
+/// This repository provides methods for user authentication including
+/// sign in, sign up, and sign out functionality. It abstracts the
+/// data source layer and provides clean error handling through Either.
+///
+/// Example usage:
+/// ```dart
+/// final repository = getIt<AuthRepository>();
+/// final result = await repository.signIn('email@example.com', 'password');
+/// result.fold(
+///   (failure) => print('Error: ${failure}'),
+///   (user) => print('Success: ${user.profileName}'),
+/// );
+/// ```
+abstract class AuthRepository {
+  /// Signs in a user with email and password.
+  ///
+  /// Returns [Right(User)] on success or [Left(Failure)] on error.
+  /// Possible failures: [ServerFailure], [AuthFailure], [NetworkFailure]
+  Future<Either<Failure, User>> signIn(String email, String password);
+  
+  /// Registers a new user account.
+  ///
+  /// [email] must be a valid email address
+  /// [password] must be at least 6 characters
+  /// [profileName] must not be empty
+  ///
+  /// Returns [Right(User)] on success or [Left(Failure)] on error.
+  Future<Either<Failure, User>> signUp(
+    String email,
+    String password,
+    String profileName,
+  );
+  
+  /// Signs out the current user.
+  ///
+  /// Always succeeds unless there's a network/server error.
+  Future<Either<Failure, void>> signOut();
+}VII. Prototype Delivery Checklist
+Must Have for Prototype
+
+✅ User authentication (email/password)
+✅ Map view with 20+ sample events (Mignaloux-Beauvoir area)
+✅ Event creation with all fields
+✅ Event detail view with verification
+✅ Profile page with privacy toggle
+✅ Friend search and add functionality
+✅ Basic messaging between users
+✅ Notifications list
+✅ Calendar view with availability
+✅ Search with filters
+✅ Bottom navigation
+✅ Settings page with interests
+
+Nice to Have
+
+🔄 Smooth animations
+🔄 Offline support
+🔄 Push notifications
+🔄 Image upload to storage
+🔄 Group messaging
+
+Known Limitations (Document for Client)
+
+Mock Data: All data is in-memory and resets on app restart
+No Real-time Updates: Changes won't sync across devices
+Limited Location Data: Sample events only in Mignaloux-Beauvoir area
+No Image Upload: Photos use placeholder URLs
+No Push Notifications: Only in-app notifications
+Single Device: No cross-device synchronization
