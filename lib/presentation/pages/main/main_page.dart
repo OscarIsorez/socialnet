@@ -23,7 +23,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _pages = const [
-      MapHomePage(),
+      MapHomePage(embedded: true),
       SearchPage(),
       CalendarPage(),
       ConversationsPage(),

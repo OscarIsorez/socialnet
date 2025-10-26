@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/theme/app_theme.dart';
 import 'injection_container.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
+import 'presentation/bloc/event/event_bloc.dart';
+import 'presentation/bloc/map/map_bloc.dart';
 import 'presentation/routes/app_router.dart';
 
 Future<void> main() async {
@@ -17,8 +19,12 @@ class RedemtonApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<AuthBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(create: (_) => getIt<AuthBloc>()),
+        BlocProvider<EventBloc>(create: (_) => getIt<EventBloc>()),
+        BlocProvider<MapBloc>(create: (_) => getIt<MapBloc>()),
+      ],
       child: MaterialApp(
         title: 'Redemton',
         debugShowCheckedModeBanner: false,
