@@ -108,9 +108,4 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     return failure.message ?? 'Something went wrong. Please try again.';
   }
-
-  @override
-  Future<void> close() {
-    return super.close();
-  }
 }

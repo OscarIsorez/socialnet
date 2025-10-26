@@ -9,14 +9,14 @@ class EventModel extends Event {
     required super.description,
     required super.category,
     required super.subCategory,
-    required LocationPoint location,
+    required super.location,
     super.photoUrl,
     super.startTime,
     super.endTime,
     super.isActive,
     super.verificationCount,
     required super.createdAt,
-  }) : super(location: location);
+  });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
     return EventModel(
@@ -83,6 +83,7 @@ class EventModel extends Event {
     };
   }
 
+  @override
   EventModel copyWith({
     String? id,
     String? creatorId,
