@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/location_point.dart';
@@ -24,6 +26,7 @@ class _MapHomePageState extends State<MapHomePage> {
   static const double _defaultRadiusKm = 5;
 
   final DateFormat _dateFormat = DateFormat('EEE d MMM HH:mm');
+  final MapController _mapController = MapController();
 
   EventCategory? _selectedCategory;
 
@@ -43,13 +46,31 @@ class _MapHomePageState extends State<MapHomePage> {
     );
   }
 
-  Future<void> _onRefresh() async {
-    _loadEvents(category: _selectedCategory);
-  }
-
   void _onCategorySelected(EventCategory? category) {
     setState(() => _selectedCategory = category);
     _loadEvents(category: category);
+  }
+
+  void _onMarkerTapped(Event event) {
+    _showEventBottomSheet(event);
+  }
+
+  void _showEventBottomSheet(Event event) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _EventDetailSheet(
+        event: event,
+        dateFormat: _dateFormat,
+        onViewDetails: () {
+          Navigator.pop(context);
+          Navigator.of(context).pushNamed(AppRouter.eventDetail, arguments: event);
+        },
+      ),
+    );
   }
 
   @override
@@ -66,22 +87,43 @@ class _MapHomePageState extends State<MapHomePage> {
         final bool showInPlaceLoader =
             state.status == MapStatus.loading && state.events.isEmpty;
 
-        return Column(
+        return Stack(
           children: [
-            _CategoryFilterBar(
-              selectedCategory: _selectedCategory,
-              onCategorySelected: _onCategorySelected,
+            Column(
+              children: [
+                _CategoryFilterBar(
+                  selectedCategory: _selectedCategory,
+                  onCategorySelected: _onCategorySelected,
+                ),
+                if (state.status == MapStatus.loading && state.events.isNotEmpty)
+                  const LinearProgressIndicator(minHeight: 2),
+                Expanded(
+                  child: showInPlaceLoader
+                      ? const _CenteredProgress()
+                      : _MapView(
+                          events: state.events,
+                          center: _defaultCenter,
+                          mapController: _mapController,
+                          onMarkerTapped: _onMarkerTapped,
+                        ),
+                ),
+              ],
             ),
-            if (state.status == MapStatus.loading && state.events.isNotEmpty)
-              const LinearProgressIndicator(minHeight: 2),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _onRefresh,
-                child: showInPlaceLoader
-                    ? const _CenteredProgress()
-                    : _EventResultsList(state: state, dateFormat: _dateFormat),
+            if (state.events.isNotEmpty)
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: FloatingActionButton.small(
+                  heroTag: 'recenterMap',
+                  onPressed: () {
+                    _mapController.move(
+                      LatLng(_defaultCenter.latitude, _defaultCenter.longitude),
+                      13.0,
+                    );
+                  },
+                  child: const Icon(Icons.my_location),
+                ),
               ),
-            ),
           ],
         );
       },
@@ -187,78 +229,114 @@ class _CenteredProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: const [
-        SizedBox(height: 160),
-        Center(child: CircularProgressIndicator()),
-      ],
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 }
 
-class _EventResultsList extends StatelessWidget {
-  const _EventResultsList({required this.state, required this.dateFormat});
+class _MapView extends StatelessWidget {
+  const _MapView({
+    required this.events,
+    required this.center,
+    required this.mapController,
+    required this.onMarkerTapped,
+  });
 
-  final MapState state;
-  final DateFormat dateFormat;
+  final List<Event> events;
+  final LocationPoint center;
+  final MapController mapController;
+  final Function(Event) onMarkerTapped;
+
+  Color _getCategoryColor(EventCategory category) {
+    switch (category) {
+      case EventCategory.music:
+        return Colors.purple;
+      case EventCategory.sports:
+        return Colors.orange;
+      case EventCategory.social:
+        return Colors.blue;
+      case EventCategory.problem:
+        return Colors.red;
+      case EventCategory.other:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (state.events.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          const SizedBox(height: 160),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.location_off_outlined,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Aucun événement à afficher',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  state.status == MapStatus.failure
-                      ? state.message ?? 'Une erreur est survenue.'
-                      : 'Essayez d\'élargir le rayon ou d\'ajouter un événement.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+    return FlutterMap(
+      mapController: mapController,
+      options: MapOptions(
+        initialCenter: LatLng(center.latitude, center.longitude),
+        initialZoom: 13.0,
+        minZoom: 3.0,
+        maxZoom: 18.0,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.socialnet',
+        ),
+        MarkerLayer(
+          markers: events.map((event) {
+            return Marker(
+              width: 40.0,
+              height: 40.0,
+              point: LatLng(event.location.latitude, event.location.longitude),
+              child: GestureDetector(
+                onTap: () => onMarkerTapped(event),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _getCategoryColor(event.category),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(event.category),
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: state.events.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final event = state.events[index];
-        return _EventTile(event: event, dateFormat: dateFormat);
-      },
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
+  }
+
+  IconData _getCategoryIcon(EventCategory category) {
+    switch (category) {
+      case EventCategory.music:
+        return Icons.music_note;
+      case EventCategory.sports:
+        return Icons.sports_soccer;
+      case EventCategory.social:
+        return Icons.people;
+      case EventCategory.problem:
+        return Icons.warning;
+      case EventCategory.other:
+        return Icons.place;
+    }
   }
 }
 
-class _EventTile extends StatelessWidget {
-  const _EventTile({required this.event, required this.dateFormat});
+class _EventDetailSheet extends StatelessWidget {
+  const _EventDetailSheet({
+    required this.event,
+    required this.dateFormat,
+    required this.onViewDetails,
+  });
 
   final Event event;
   final DateFormat dateFormat;
+  final VoidCallback onViewDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -271,82 +349,93 @@ class _EventTile extends StatelessWidget {
         ? '${dateFormat.format(start)} - ${DateFormat('HH:mm').format(end)}'
         : dateText;
 
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.of(
-          context,
-        ).pushNamed(AppRouter.eventDetail, arguments: event),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      event.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Chip(
-                    label: Text(event.category.name.toUpperCase()),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
+              Expanded(
+                child: Text(
+                  event.title,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                event.description,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Icon(Icons.access_time, size: 16),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      durationText,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.place_outlined, size: 16),
-                  const SizedBox(width: 6),
-                  Text(
-                    _formatCoordinates(event.location),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.verified_outlined),
-                    tooltip: '${event.verificationCount} confirmations',
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).pushNamed(AppRouter.eventDetail, arguments: event),
-                  ),
-                ],
+              const SizedBox(width: 8),
+              Chip(
+                label: Text(
+                  event.category.name.toUpperCase(),
+                  style: const TextStyle(fontSize: 11),
+                ),
+                visualDensity: VisualDensity.compact,
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            event.description,
+            style: Theme.of(context).textTheme.bodyMedium,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  durationText,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.verified_outlined,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${event.verificationCount} confirmations',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: onViewDetails,
+              icon: const Icon(Icons.info_outline),
+              label: const Text('Voir les détails'),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
-  }
-
-  String _formatCoordinates(LocationPoint location) {
-    return '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}';
   }
 }
