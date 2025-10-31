@@ -6,6 +6,7 @@ import 'injection_container.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/event/event_bloc.dart';
 import 'presentation/bloc/map/map_bloc.dart';
+import 'presentation/bloc/search/search_bloc.dart';
 import 'presentation/routes/app_router.dart';
 
 Future<void> main() async {
@@ -24,6 +25,7 @@ class RedemtonApp extends StatelessWidget {
         BlocProvider<AuthBloc>(create: (_) => getIt<AuthBloc>()),
         BlocProvider<EventBloc>(create: (_) => getIt<EventBloc>()),
         BlocProvider<MapBloc>(create: (_) => getIt<MapBloc>()),
+        BlocProvider<SearchBloc>(create: (_) => getIt<SearchBloc>()),
       ],
       child: MaterialApp(
         title: 'Redemton',
