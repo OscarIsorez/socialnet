@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../routes/app_router.dart';
@@ -178,4 +179,16 @@ class _OnboardSlide {
     required this.description,
     required this.icon,
   });
+}
+
+// Widget Preview for OnboardingPage
+@Preview(name: 'Onboarding Page - Light Mode')
+@Preview(name: 'Onboarding Page - Dark Mode', brightness: Brightness.dark)
+Widget onboardingPagePreview() {
+  return MaterialApp(
+    theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+    darkTheme: ThemeData.dark(useMaterial3: true),
+    home: const OnboardingPage(),
+    debugShowCheckedModeBanner: false,
+  );
 }
