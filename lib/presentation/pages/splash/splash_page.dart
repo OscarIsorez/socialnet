@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/constants/app_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../routes/app_router.dart';
 import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/auth/auth_event.dart';
@@ -18,8 +19,23 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+
+      // Show onboarding on first run
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final seen = prefs.getBool('seenOnboarding') ?? false;
+
+        if (!seen) {
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, AppRouter.onboarding);
+          return;
+        }
+      } catch (_) {
+        // If SharedPreferences fails for any reason, fall back to auth check
+      }
+
       context.read<AuthBloc>().add(const CheckAuthStatus());
     });
   }

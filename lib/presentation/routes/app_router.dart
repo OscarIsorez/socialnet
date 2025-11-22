@@ -12,11 +12,13 @@ import '../pages/profile/edit_profile_page.dart';
 import '../pages/settings/interests_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/splash/splash_page.dart';
+import '../pages/onboarding/onboarding_page.dart';
 
 class AppRouter {
   AppRouter._();
 
   static const String splash = '/';
+  static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String main = '/main';
@@ -32,6 +34,8 @@ class AppRouter {
     switch (routeSettings.name) {
       case splash:
         return MaterialPageRoute(builder: (_) => const SplashPage());
+      case onboarding:
+        return MaterialPageRoute(builder: (_) => const OnboardingPage());
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case signup:
