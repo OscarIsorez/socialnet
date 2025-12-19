@@ -107,10 +107,10 @@ class EventSearchCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getCategoryColor().withOpacity(0.1),
+                          color: _getCategoryColor().withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _getCategoryColor().withOpacity(0.3),
+                            color: _getCategoryColor().withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
@@ -141,7 +141,7 @@ class EventSearchCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Text(

@@ -79,8 +79,8 @@ class QuickActionChips extends StatelessWidget {
       avatar: Icon(icon, size: 18, color: color),
       label: Text(label),
       onPressed: () => onCategorySelected(category),
-      backgroundColor: color.withOpacity(0.1),
-      side: BorderSide(color: color.withOpacity(0.3)),
+      backgroundColor: color.withValues(alpha: 0.1),
+      side: BorderSide(color: color.withValues(alpha: 0.3)),
     );
   }
 }

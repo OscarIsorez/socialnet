@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/location_point.dart';
 import '../../bloc/map/map_bloc.dart';
@@ -67,7 +68,9 @@ class _MapHomePageState extends State<MapHomePage> {
         dateFormat: _dateFormat,
         onViewDetails: () {
           Navigator.pop(context);
-          Navigator.of(context).pushNamed(AppRouter.eventDetail, arguments: event);
+          Navigator.of(
+            context,
+          ).pushNamed(AppRouter.eventDetail, arguments: event);
         },
       ),
     );
@@ -95,7 +98,8 @@ class _MapHomePageState extends State<MapHomePage> {
                   selectedCategory: _selectedCategory,
                   onCategorySelected: _onCategorySelected,
                 ),
-                if (state.status == MapStatus.loading && state.events.isNotEmpty)
+                if (state.status == MapStatus.loading &&
+                    state.events.isNotEmpty)
                   const LinearProgressIndicator(minHeight: 2),
                 Expanded(
                   child: showInPlaceLoader
@@ -130,45 +134,91 @@ class _MapHomePageState extends State<MapHomePage> {
     );
 
     if (widget.embedded) {
-      return Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Explorer',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Recharger',
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => _loadEvents(category: _selectedCategory),
-                ),
-              ],
+      return Container(
+        color: AppColors.scaffoldBackground,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Explorer',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryLight,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.border, width: 2),
+                    ),
+                    child: IconButton(
+                      tooltip: 'Actualiser',
+                      icon: const Icon(Icons.refresh, color: AppColors.primary),
+                      onPressed: () => _loadEvents(category: _selectedCategory),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(child: content),
-        ],
+            Expanded(child: content),
+          ],
+        ),
       );
     }
 
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: const Text('Explorer'),
+        backgroundColor: AppColors.scaffoldBackground,
+        title: const Text(
+          'Explorer',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
+          ),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Recharger',
-            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualiser',
+            icon: const Icon(Icons.refresh, color: AppColors.primary),
             onPressed: () => _loadEvents(category: _selectedCategory),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed(AppRouter.createEvent),
-        icon: const Icon(Icons.add_location_alt_outlined),
-        label: const Text('Nouvel événement'),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.buttonPrimary, AppColors.buttonPrimary],
+          ),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () =>
+              Navigator.of(context).pushNamed(AppRouter.createEvent),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(
+            Icons.add_location_alt_outlined,
+            color: AppColors.textPrimary,
+          ),
+          label: const Text(
+            'Nouvel événement',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
       ),
       body: content,
     );
@@ -186,29 +236,89 @@ class _CategoryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       height: 56,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         scrollDirection: Axis.horizontal,
         children: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: const Text('Tous'),
-              selected: selectedCategory == null,
-              onSelected: (_) => onCategorySelected(null),
+            child: Container(
+              decoration: BoxDecoration(
+                color: selectedCategory == null
+                    ? AppColors.primary
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: selectedCategory == null
+                      ? AppColors.primary
+                      : AppColors.border,
+                  width: 2,
+                ),
+              ),
+              child: InkWell(
+                onTap: () => onCategorySelected(null),
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Text(
+                    'Tous',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: selectedCategory == null
+                          ? Colors.white
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           ...EventCategory.values.map(
             (category) => Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(_displayLabel(category)),
-                selected: selectedCategory == category,
-                onSelected: (selected) => selected
-                    ? onCategorySelected(category)
-                    : onCategorySelected(null),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: selectedCategory == category
+                      ? AppColors.primary
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: selectedCategory == category
+                        ? AppColors.primary
+                        : AppColors.border,
+                    width: 2,
+                  ),
+                ),
+                child: InkWell(
+                  onTap: () => selectedCategory == category
+                      ? onCategorySelected(null)
+                      : onCategorySelected(category),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      _displayLabel(category),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: selectedCategory == category
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -218,9 +328,18 @@ class _CategoryFilterBar extends StatelessWidget {
   }
 
   String _displayLabel(EventCategory category) {
-    final name = category.name;
-    if (name.isEmpty) return name;
-    return name[0].toUpperCase() + name.substring(1);
+    switch (category) {
+      case EventCategory.music:
+        return 'Musique';
+      case EventCategory.sports:
+        return 'Sports';
+      case EventCategory.social:
+        return 'Social';
+      case EventCategory.problem:
+        return 'Problème';
+      case EventCategory.other:
+        return 'Autre';
+    }
   }
 }
 

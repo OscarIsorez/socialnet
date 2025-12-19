@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/search_filters.dart';
 import '../../bloc/search/search_bloc.dart';
@@ -80,6 +81,7 @@ class _SearchPageState extends State<SearchPage>
         child: const FilterBottomSheet(),
       ),
     ).then((_) {
+      if (!mounted) return;
       final currentFilters = context.read<SearchBloc>().state.filters;
 
       // Re-search if there was a query and filters changed
@@ -107,44 +109,91 @@ class _SearchPageState extends State<SearchPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: _tabController.index == 0
-                      ? 'Search events...'
-                      : 'Search users...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                ),
-                onSubmitted: (_) => _performSearch(),
+        backgroundColor: AppColors.scaffoldBackground,
+        elevation: 0,
+        title: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: AppColors.border, width: 2),
+          ),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: _tabController.index == 0
+                  ? 'Rechercher des événements...'
+                  : 'Rechercher des utilisateurs...',
+              hintStyle: const TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                color: AppColors.textSecondary,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppColors.textSecondary,
               ),
             ),
-          ],
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+              fontSize: 16,
+            ),
+            onSubmitted: (_) => _performSearch(),
+          ),
         ),
         actions: [
           if (_tabController.index == 0)
             BlocBuilder<SearchBloc, SearchState>(
               builder: (context, state) {
-                return IconButton(
-                  icon: Badge(
-                    isLabelVisible: state.hasFilters,
-                    child: const Icon(Icons.filter_list),
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border, width: 2),
                   ),
-                  onPressed: _showFilterBottomSheet,
+                  child: IconButton(
+                    icon: Badge(
+                      isLabelVisible: state.hasFilters,
+                      backgroundColor: AppColors.accent,
+                      child: const Icon(
+                        Icons.filter_list,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    onPressed: _showFilterBottomSheet,
+                  ),
                 );
               },
             ),
-          IconButton(icon: const Icon(Icons.search), onPressed: _performSearch),
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
+          labelStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+          ),
+          indicatorColor: AppColors.primary,
+          indicatorWeight: 3,
           tabs: const [
-            Tab(text: 'Events'),
-            Tab(text: 'Users'),
+            Tab(text: 'Événements'),
+            Tab(text: 'Utilisateurs'),
           ],
         ),
       ),
@@ -182,16 +231,52 @@ class _SearchPageState extends State<SearchPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  state.message ?? 'An error occurred',
-                  style: TextStyle(color: Colors.grey[600]),
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AppColors.textSecondary,
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _performSearch,
-                  child: const Text('Try Again'),
+                Text(
+                  state.message ?? 'Une erreur s\'est produite',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppColors.buttonPrimary,
+                        AppColors.buttonPrimary,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _performSearch,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text(
+                      'Réessayer',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

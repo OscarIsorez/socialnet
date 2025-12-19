@@ -4,18 +4,20 @@ import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 import 'text_styles.dart';
 
-/// Provides the visual identity for the application. Keep the configuration
-/// aligned with the design tokens defined in [AppColors] and
-/// [AppTextStyles].
+/// Provides the visual identity for the Mapvent application.
+/// Based on the Figma design system with Poppins font and blue color scheme.
 class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
     final base = ThemeData(
       useMaterial3: true,
+      fontFamily: 'Poppins', // Primary font from Figma
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
+        surface: AppColors.scaffoldBackground,
+        onSurface: AppColors.textPrimary,
       ),
       scaffoldBackgroundColor: AppColors.scaffoldBackground,
       appBarTheme: const AppBarTheme(
@@ -23,35 +25,59 @@ class AppTheme {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
+        titleTextStyle: TextStyle(
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.w600,
+          fontSize: 20,
+          color: AppColors.textPrimary,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
+      // Mapvent-style input fields with thick borders
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.cardBackground,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: AppColors.border, width: 3),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: AppColors.border, width: 3),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: AppColors.primary, width: 3),
+        ),
+        labelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.w600,
+          fontSize: 18,
+          color: AppColors.textPrimary,
         ),
       ),
+      // Mapvent-style buttons with gradient backgrounds
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          textStyle: AppTextStyles.button,
+          backgroundColor: AppColors.buttonPrimary,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          textStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
       ),
@@ -90,7 +116,7 @@ class AppTheme {
           );
   }
 
-  static const String fontFamily = 'Inter';
+  static const String fontFamily = 'Poppins';
 
   static const List<String> supportedLocales = [AppConstants.defaultLocale];
 }
