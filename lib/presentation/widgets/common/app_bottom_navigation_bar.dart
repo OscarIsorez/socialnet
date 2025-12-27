@@ -17,28 +17,28 @@ class AppBottomNavigationBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onTap,
       type: BottomNavigationBarType.fixed,
-      showSelectedLabels: false,
+      showSelectedLabels: true,
       showUnselectedLabels: false,
       items: [
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/earth.svg', height: 24),
-          label: '',
+          label: 'Discover',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/search.svg', height: 24),
-          label: '',
+          label: 'Search',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/scroll.svg', height: 24),
-          label: '',
+          label: 'Feed',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/send.svg', height: 24),
-          label: '',
+          label: 'Chat',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/profile.svg', height: 24),
-          label: '',
+          label: 'Profile',
         ),
       ],
     );
