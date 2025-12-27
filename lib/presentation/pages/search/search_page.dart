@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,35 +17,40 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      // Rebuild to update filter button visibility and hint text
-      setState(() {});
-    });
     _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    if (_searchController.text.isEmpty && _isSearching) {
+    _debounceTimer?.cancel();
+
+    // Rebuild to show/hide clear button
+    setState(() {});
+
+    if (_searchController.text.isEmpty) {
       setState(() => _isSearching = false);
       context.read<SearchBloc>().add(const ClearSearchResultsRequested());
+      return;
     }
+
+    // Debounce search to avoid excessive API calls
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _performSearch();
+    });
   }
 
   void _performSearch() {
@@ -54,18 +60,14 @@ class _SearchPageState extends State<SearchPage>
     setState(() => _isSearching = true);
     FocusScope.of(context).unfocus();
 
-    if (_tabController.index == 0) {
-      // Search events
-      context.read<SearchBloc>().add(
-        SearchEventsRequested(
-          query: query,
-          filters: context.read<SearchBloc>().state.filters,
-        ),
-      );
-    } else {
-      // Search users
-      context.read<SearchBloc>().add(SearchUsersRequested(query));
-    }
+    // Search both events and users simultaneously
+    context.read<SearchBloc>().add(
+      SearchEventsRequested(
+        query: query,
+        filters: context.read<SearchBloc>().state.filters,
+      ),
+    );
+    context.read<SearchBloc>().add(SearchUsersRequested(query));
   }
 
   void _showFilterBottomSheet() {
@@ -114,55 +116,44 @@ class _SearchPageState extends State<SearchPage>
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: _tabController.index == 0
-                      ? 'Search events...'
-                      : 'Search users...',
+                  hintText: 'Search events and users...',
                   border: InputBorder.none,
                   hintStyle: TextStyle(color: Colors.grey[400]),
                 ),
-                onSubmitted: (_) => _performSearch(),
               ),
             ),
           ],
         ),
         actions: [
-          if (_tabController.index == 0)
-            BlocBuilder<SearchBloc, SearchState>(
-              builder: (context, state) {
-                return IconButton(
-                  icon: Badge(
-                    isLabelVisible: state.hasFilters,
-                    child: const Icon(Icons.filter_list),
-                  ),
-                  onPressed: _showFilterBottomSheet,
-                );
+          BlocBuilder<SearchBloc, SearchState>(
+            builder: (context, state) {
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: state.hasFilters,
+                  child: const Icon(Icons.filter_list),
+                ),
+                onPressed: _showFilterBottomSheet,
+              );
+            },
+          ),
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: () {
+                _searchController.clear();
+                FocusScope.of(context).unfocus();
               },
             ),
-          IconButton(icon: const Icon(Icons.search), onPressed: _performSearch),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Events'),
-            Tab(text: 'Users'),
-          ],
-        ),
       ),
       body: BlocBuilder<SearchBloc, SearchState>(
         builder: (context, state) {
           return Column(
             children: [
-              // Show quick actions only when on events tab, not searching, and no filters applied
-              if (_tabController.index == 0 &&
-                  !_isSearching &&
-                  !state.hasFilters)
+              // Show quick actions when not searching and no filters applied
+              if (!_isSearching && !state.hasFilters)
                 QuickActionChips(onCategorySelected: _onQuickActionSelected),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [_buildEventsTab(), _buildUsersTab()],
-                ),
-              ),
+              Expanded(child: _buildSearchResults()),
             ],
           );
         },
@@ -170,7 +161,7 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  Widget _buildEventsTab() {
+  Widget _buildSearchResults() {
     return BlocBuilder<SearchBloc, SearchState>(
       builder: (context, state) {
         if (state.isLoading) {
@@ -206,7 +197,7 @@ class _SearchPageState extends State<SearchPage>
                 Icon(Icons.search, size: 64, color: Colors.grey[300]),
                 const SizedBox(height: 16),
                 Text(
-                  'Search for events or use quick actions',
+                  'Search for events and users',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
               ],
@@ -214,15 +205,18 @@ class _SearchPageState extends State<SearchPage>
           );
         }
 
-        if (state.events.isEmpty) {
+        final hasEvents = state.events.isNotEmpty;
+        final hasUsers = state.users.isNotEmpty;
+
+        if (!hasEvents && !hasUsers) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_busy, size: 64, color: Colors.grey[300]),
+                Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
                 const SizedBox(height: 16),
                 Text(
-                  'No events found',
+                  'No results found',
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 8),
@@ -235,80 +229,34 @@ class _SearchPageState extends State<SearchPage>
           );
         }
 
-        return ListView.builder(
+        return ListView(
           padding: const EdgeInsets.all(8),
-          itemCount: state.events.length,
-          itemBuilder: (context, index) {
-            return EventSearchCard(event: state.events[index]);
-          },
+          children: [
+            if (hasEvents) ...[
+              if (hasUsers) _buildSectionHeader('Events'),
+              ...state.events.map((event) => EventSearchCard(event: event)),
+            ],
+            if (hasUsers) ...[
+              if (hasEvents) const SizedBox(height: 16),
+              if (hasEvents) _buildSectionHeader('Users'),
+              ...state.users.map((user) => UserSearchCard(user: user)),
+            ],
+          ],
         );
       },
     );
   }
 
-  Widget _buildUsersTab() {
-    return BlocBuilder<SearchBloc, SearchState>(
-      builder: (context, state) {
-        if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  state.message ?? 'An error occurred',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (!_isSearching) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.people, size: 64, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text(
-                  'Search for users by name or email',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (state.users.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.person_off, size: 64, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text(
-                  'No users found',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(8),
-          itemCount: state.users.length,
-          itemBuilder: (context, index) {
-            return UserSearchCard(user: state.users[index]);
-          },
-        );
-      },
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[700],
+        ),
+      ),
     );
   }
 }

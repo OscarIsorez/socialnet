@@ -8,7 +8,6 @@ class ConversationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
       body: ListView.builder(
         itemCount: 5,
         itemBuilder: (context, index) {

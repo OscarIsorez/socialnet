@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../routes/app_router.dart';
 import '../../widgets/common/app_bottom_navigation_bar.dart';
-import '../calendar/calendar_page.dart';
 import '../map/map_home_page.dart';
 import '../messaging/conversations_page.dart';
 import '../profile/profile_page.dart';
+import '../scroll/scroll_page.dart';
 import '../search/search_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -26,7 +26,7 @@ class _MainPageState extends State<MainPage> {
     _pages = const [
       MapHomePage(embedded: true),
       SearchPage(),
-      CalendarPage(),
+      ScrollPage(),
       ConversationsPage(),
       ProfilePage(),
     ];
@@ -34,10 +34,6 @@ class _MainPageState extends State<MainPage> {
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
-  }
-
-  void _openCreateEvent() {
-    Navigator.pushNamed(context, AppRouter.createEvent);
   }
 
   @override

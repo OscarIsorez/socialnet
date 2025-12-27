@@ -12,5 +12,5 @@ class ApiEndpoints {
   static const String social = '$baseUrl/social';
   static const String messaging = '$baseUrl/messaging';
   static const String notifications = '$baseUrl/notifications';
-  static const String calendar = '$baseUrl/calendar';
+  static const String scroll = '$baseUrl/scroll';
 }
