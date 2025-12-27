@@ -116,15 +116,31 @@ class _MapHomePageState extends State<MapHomePage> {
               Positioned(
                 right: 16,
                 bottom: 16,
-                child: FloatingActionButton.small(
-                  heroTag: 'recenterMap',
-                  onPressed: () {
-                    _mapController.move(
-                      LatLng(_defaultCenter.latitude, _defaultCenter.longitude),
-                      13.0,
-                    );
-                  },
-                  child: const Icon(Icons.my_location),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FloatingActionButton.small(
+                      heroTag: 'createEvent',
+                      onPressed: () => Navigator.of(
+                        context,
+                      ).pushNamed(AppRouter.createEvent),
+                      child: const Icon(Icons.add_location_alt_outlined),
+                    ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton.small(
+                      heroTag: 'recenterMap',
+                      onPressed: () {
+                        _mapController.move(
+                          LatLng(
+                            _defaultCenter.latitude,
+                            _defaultCenter.longitude,
+                          ),
+                          13.0,
+                        );
+                      },
+                      child: const Icon(Icons.my_location),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -133,11 +149,7 @@ class _MapHomePageState extends State<MapHomePage> {
     );
 
     if (widget.embedded) {
-      return Column(
-        children: [
-          Expanded(child: content),
-        ],
-      );
+      return Column(children: [Expanded(child: content)]);
     }
 
     return Scaffold(

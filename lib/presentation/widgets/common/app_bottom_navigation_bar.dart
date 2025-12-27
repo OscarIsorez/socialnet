@@ -28,11 +28,11 @@ class AppBottomNavigationBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/scroll.svg', height: 24),
-          label: 'Calendar',
+          label: 'Discover',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/send.svg', height: 24),
-          label: 'Messages',
+          label: 'Chat',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/profile.svg', height: 24),

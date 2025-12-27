@@ -10,13 +10,30 @@ import 'text_styles.dart';
 class AppTheme {
   AppTheme._();
 
+  static ThemeData get darkTheme {
+    return themed(brightness: Brightness.dark);
+  }
+
   static ThemeData get lightTheme {
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          tertiary: AppColors.accent,
+          error: AppColors.error,
+          surface: AppColors.cardBackground,
+          onSurface: AppColors.textPrimary,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          outline: AppColors.border,
+        );
+
     final base = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
-        brightness: Brightness.light,
-      ),
+      useMaterial3: false,
+      colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.scaffoldBackground,
       appBarTheme: const AppBarTheme(
         elevation: 0,
@@ -27,6 +44,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: AppColors.cardBackground,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -54,6 +72,26 @@ class AppTheme {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        focusElevation: 6,
+        hoverElevation: 6,
+        highlightElevation: 8,
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
+        backgroundColor: Colors.white,
+        elevation: 8,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.border,
+        selectedColor: AppColors.primary,
+        labelStyle: const TextStyle(color: AppColors.textPrimary),
+        secondarySelectedColor: AppColors.primary.withValues(alpha: 0.1),
       ),
     );
 
