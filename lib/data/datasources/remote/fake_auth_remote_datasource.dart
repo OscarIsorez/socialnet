@@ -11,7 +11,7 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   FakeAuthRemoteDataSource() {
     final demoUser = UserModel(
       id: _uuid.v4(),
-      email: 'demo@redemton.com',
+      email: 'demo@r.com',
       profileName: 'Demo Explorer',
       photoUrl: null,
       isPublic: true,
@@ -22,7 +22,7 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
 
     _users[demoUser.email.toLowerCase()] = _FakeUserRecord(
       user: demoUser,
-      password: 'password123',
+      password: 'pass123',
     );
   }
 

@@ -67,7 +67,9 @@ class _MapHomePageState extends State<MapHomePage> {
         dateFormat: _dateFormat,
         onViewDetails: () {
           Navigator.pop(context);
-          Navigator.of(context).pushNamed(AppRouter.eventDetail, arguments: event);
+          Navigator.of(
+            context,
+          ).pushNamed(AppRouter.eventDetail, arguments: event);
         },
       ),
     );
@@ -95,7 +97,8 @@ class _MapHomePageState extends State<MapHomePage> {
                   selectedCategory: _selectedCategory,
                   onCategorySelected: _onCategorySelected,
                 ),
-                if (state.status == MapStatus.loading && state.events.isNotEmpty)
+                if (state.status == MapStatus.loading &&
+                    state.events.isNotEmpty)
                   const LinearProgressIndicator(minHeight: 2),
                 Expanded(
                   child: showInPlaceLoader
@@ -132,23 +135,6 @@ class _MapHomePageState extends State<MapHomePage> {
     if (widget.embedded) {
       return Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Explorer',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Recharger',
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () => _loadEvents(category: _selectedCategory),
-                ),
-              ],
-            ),
-          ),
           Expanded(child: content),
         ],
       );

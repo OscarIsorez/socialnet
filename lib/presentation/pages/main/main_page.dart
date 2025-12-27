@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../routes/app_router.dart';
+import '../../widgets/common/app_bottom_navigation_bar.dart';
 import '../calendar/calendar_page.dart';
 import '../map/map_home_page.dart';
 import '../messaging/conversations_page.dart';
@@ -43,7 +44,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titleForIndex(_selectedIndex)),
+        title: Text(AppBottomNavigationBar.getTitleForIndex(_selectedIndex)),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
@@ -57,46 +58,10 @@ class _MainPageState extends State<MainPage> {
         ],
       ),
       body: _pages[_selectedIndex],
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openCreateEvent,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Calendar'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
       ),
     );
-  }
-
-  String _titleForIndex(int index) {
-    switch (index) {
-      case 0:
-        return 'Discover';
-      case 1:
-        return 'Search';
-      case 2:
-        return 'Calendar';
-      case 3:
-        return 'Messages';
-      case 4:
-        return 'Profile';
-      default:
-        return 'Redemton';
-    }
   }
 }
