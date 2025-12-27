@@ -9,6 +9,7 @@ import '../pages/main/main_page.dart';
 import '../pages/messaging/chat_page.dart';
 import '../pages/notifications/notifications_page.dart';
 import '../pages/profile/edit_profile_page.dart';
+import '../pages/profile/profile_page.dart';
 import '../pages/settings/interests_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/splash/splash_page.dart';
@@ -27,6 +28,7 @@ class AppRouter {
   static const String chat = '/chat';
   static const String notifications = '/notifications';
   static const String settings = '/settings';
+  static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String interests = '/interests';
 
@@ -53,12 +55,17 @@ class AppRouter {
         final userId = routeSettings.arguments;
         return MaterialPageRoute(
           builder: (_) =>
-              ChatPage(userId: userId is String ? userId : 'unknown'),
+              ChatPage(convId: userId is String ? userId : 'unknown'),
         );
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
       case settings:
         return MaterialPageRoute(builder: (_) => const SettingsPage());
+      case profile:
+        final userId = routeSettings.arguments;
+        return MaterialPageRoute(
+          builder: (_) => ProfilePage(userId: userId is String ? userId : null),
+        );
       case editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfilePage());
       case interests:

@@ -23,6 +23,40 @@ class FakeEventRemoteDataSource implements EventRemoteDataSource {
 
     final now = DateTime.now();
     _events.addAll([
+      // Events created by current user
+      EventModel(
+        id: _uuid.v4(),
+        creatorId: 'current-user',
+        title: 'Flutter Meetup - Building Great Apps',
+        description:
+            'Join us for an evening of Flutter development discussions and networking. We\'ll cover the latest features and best practices.',
+        category: EventCategory.social,
+        subCategory: EventSubCategory.meetup,
+        location: const LocationPoint(latitude: 46.5802, longitude: 0.3337),
+        photoUrl: 'https://picsum.photos/400/300?random=1',
+        startTime: now.add(const Duration(days: 3, hours: 18)),
+        endTime: now.add(const Duration(days: 3, hours: 21)),
+        isActive: true,
+        verificationCount: 12,
+        createdAt: now.subtract(const Duration(days: 2)),
+      ),
+      EventModel(
+        id: _uuid.v4(),
+        creatorId: 'current-user',
+        title: 'Morning Hiking Trail',
+        description:
+            'Early morning hike through the local trails. Great for fitness and nature lovers.',
+        category: EventCategory.sports,
+        subCategory: EventSubCategory.general,
+        location: const LocationPoint(latitude: 46.585, longitude: 0.340),
+        photoUrl: 'https://picsum.photos/400/300?random=2',
+        startTime: now.add(const Duration(days: 1, hours: 7)),
+        endTime: now.add(const Duration(days: 1, hours: 10)),
+        isActive: true,
+        verificationCount: 8,
+        createdAt: now.subtract(const Duration(days: 1)),
+      ),
+      // Other events
       EventModel(
         id: _uuid.v4(),
         creatorId: 'user123',
@@ -172,4 +206,14 @@ class FakeEventRemoteDataSource implements EventRemoteDataSource {
   }
 
   double _degreesToRadians(double degrees) => degrees * pi / 180;
+
+  @override
+  Future<List<EventModel>> getUserCreatedEvents(String userId) async {
+    await _simulateNetworkDelay();
+    return _events.where((event) => event.creatorId == userId).toList();
+  }
+
+  Future<void> _simulateNetworkDelay() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
 }

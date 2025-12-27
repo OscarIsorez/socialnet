@@ -16,4 +16,6 @@ abstract class EventRepository {
   Future<Either<Failure, Event>> updateEvent(Event event);
 
   Future<Either<Failure, void>> verifyEvent(String eventId, bool stillActive);
+
+  Future<Either<Failure, List<Event>>> getUserCreatedEvents(String userId);
 }

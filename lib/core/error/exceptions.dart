@@ -24,3 +24,9 @@ class ValidationException implements Exception {
 
   final String message;
 }
+
+class NotFoundException implements Exception {
+  const NotFoundException(this.message);
+
+  final String message;
+}

@@ -94,4 +94,20 @@ class EventRepositoryImpl implements EventRepository {
       return Left(ServerFailure(message: error.message));
     }
   }
+
+  @override
+  Future<Either<Failure, List<Event>>> getUserCreatedEvents(
+    String userId,
+  ) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+
+    try {
+      final events = await _remoteDataSource.getUserCreatedEvents(userId);
+      return Right(events.map((model) => model as Event).toList());
+    } on ServerException catch (error) {
+      return Left(ServerFailure(message: error.message));
+    }
+  }
 }

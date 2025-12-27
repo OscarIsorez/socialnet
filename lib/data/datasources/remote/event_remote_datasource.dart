@@ -14,4 +14,6 @@ abstract class EventRemoteDataSource {
   Future<EventModel> updateEvent(EventModel event);
 
   Future<void> verifyEvent(String eventId, bool stillActive);
+
+  Future<List<EventModel>> getUserCreatedEvents(String userId);
 }
