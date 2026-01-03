@@ -89,7 +89,11 @@ class _SearchPageState extends State<SearchPage> {
         _performSearch();
       } else if (currentFilters?.hasFilters == true) {
         // If no query but filters were applied, trigger filter search
-        context.read<SearchBloc>().add(FilterEventsRequested(currentFilters!));
+        if (mounted) {
+          context.read<SearchBloc>().add(
+            FilterEventsRequested(currentFilters!),
+          );
+        }
         setState(() => _isSearching = true);
       } else if (previousFilters?.hasFilters == true &&
           currentFilters?.hasFilters != true) {

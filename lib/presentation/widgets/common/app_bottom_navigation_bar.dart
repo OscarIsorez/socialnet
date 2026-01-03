@@ -22,23 +22,23 @@ class AppBottomNavigationBar extends StatelessWidget {
       items: [
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/earth.svg', height: 24),
-          label: 'Discover',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/search.svg', height: 24),
-          label: 'Search',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/scroll.svg', height: 24),
-          label: 'Feed',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/send.svg', height: 24),
-          label: 'Chat',
+          label: '',
         ),
         BottomNavigationBarItem(
           icon: SvgPicture.asset('assets/profile.svg', height: 24),
-          label: 'Profile',
+          label: '',
         ),
       ],
     );
