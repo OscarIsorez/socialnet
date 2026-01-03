@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/location_point.dart';
+import '../../bloc/event/event_bloc.dart';
 import '../../bloc/map/map_bloc.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/centered_progress.dart';
@@ -81,75 +82,90 @@ class _MapHomePageState extends State<MapHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final content = BlocConsumer<MapBloc, MapState>(
-      listener: (context, state) {
-        if (state.message != null && state.status == MapStatus.failure) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(state.message!)));
-        }
-      },
-      builder: (context, state) {
-        final bool showInPlaceLoader =
-            state.status == MapStatus.loading && state.events.isEmpty;
+    final content = MultiBlocListener(
+      listeners: [
+        BlocListener<MapBloc, MapState>(
+          listener: (context, state) {
+            if (state.message != null && state.status == MapStatus.failure) {
+              ScaffoldMessenger.of(context)
+                ..hideCurrentSnackBar()
+                ..showSnackBar(SnackBar(content: Text(state.message!)));
+            }
+          },
+        ),
+        BlocListener<EventBloc, EventState>(
+          listener: (context, state) {
+            if (state.status == EventStatus.success &&
+                state.operation == EventOperation.create) {
+              // Refresh events after successful creation
+              _loadEvents(category: _selectedCategory);
+            }
+          },
+        ),
+      ],
+      child: BlocBuilder<MapBloc, MapState>(
+        builder: (context, state) {
+          final bool showInPlaceLoader =
+              state.status == MapStatus.loading && state.events.isEmpty;
 
-        return Stack(
-          children: [
-            Column(
-              children: [
-                CategoryFilterBar(
-                  selectedCategory: _selectedCategory,
-                  onCategorySelected: _onCategorySelected,
-                ),
-                if (state.status == MapStatus.loading &&
-                    state.events.isNotEmpty)
-                  const LinearProgressIndicator(minHeight: 2),
-                Expanded(
-                  child: showInPlaceLoader
-                      ? const CenteredProgress()
-                      : MapView(
-                          events: state.events,
-                          center: _defaultCenter,
-                          mapController: _mapController,
-                          onMarkerTapped: _onMarkerTapped,
-                        ),
-                ),
-              ],
-            ),
-            if (state.events.isNotEmpty)
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FloatingActionButton.small(
-                      heroTag: 'createEvent',
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).pushNamed(AppRouter.createEvent),
-                      child: const Icon(Icons.add_location_alt_outlined),
-                    ),
-                    const SizedBox(height: 8),
-                    FloatingActionButton.small(
-                      heroTag: 'recenterMap',
-                      onPressed: () {
-                        _mapController.move(
-                          LatLng(
-                            _defaultCenter.latitude,
-                            _defaultCenter.longitude,
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  CategoryFilterBar(
+                    selectedCategory: _selectedCategory,
+                    onCategorySelected: _onCategorySelected,
+                  ),
+                  if (state.status == MapStatus.loading &&
+                      state.events.isNotEmpty)
+                    const LinearProgressIndicator(minHeight: 2),
+                  Expanded(
+                    child: showInPlaceLoader
+                        ? const CenteredProgress()
+                        : MapView(
+                            events: state.events,
+                            center: _defaultCenter,
+                            mapController: _mapController,
+                            onMarkerTapped: _onMarkerTapped,
                           ),
-                          13.0,
-                        );
-                      },
-                      child: const Icon(Icons.my_location),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-          ],
-        );
-      },
+              if (state.events.isNotEmpty)
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton.small(
+                        heroTag: 'createEvent',
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pushNamed(AppRouter.createEvent),
+                        child: const Icon(Icons.add_location_alt_outlined),
+                      ),
+                      const SizedBox(height: 8),
+                      FloatingActionButton.small(
+                        heroTag: 'recenterMap',
+                        onPressed: () {
+                          _mapController.move(
+                            LatLng(
+                              _defaultCenter.latitude,
+                              _defaultCenter.longitude,
+                            ),
+                            13.0,
+                          );
+                        },
+                        child: const Icon(Icons.my_location),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
 
     if (widget.embedded) {
