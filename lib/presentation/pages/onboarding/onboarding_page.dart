@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../routes/app_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -65,12 +66,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
         elevation: 0,
         leading: TextButton(
           onPressed: _skipToSignIn,
-          child: const Text('Skip', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'Skip',
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: _finishOnboarding,
-            child: const Text('Sign Up', style: TextStyle(color: Colors.white)),
+            child: Text(
+              'Sign Up',
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            ),
           ),
         ],
       ),
@@ -133,7 +140,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         decoration: BoxDecoration(
                           color: _index == i
                               ? Theme.of(context).primaryColor
-                              : Colors.grey[300],
+                              : Theme.of(context).colorScheme.outline,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -186,8 +193,8 @@ class _OnboardSlide {
 @Preview(name: 'Onboarding Page - Dark Mode', brightness: Brightness.dark)
 Widget onboardingPagePreview() {
   return MaterialApp(
-    theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-    darkTheme: ThemeData.dark(useMaterial3: true),
+    theme: AppTheme.lightTheme,
+    darkTheme: AppTheme.darkTheme,
     home: const OnboardingPage(),
     debugShowCheckedModeBanner: false,
   );

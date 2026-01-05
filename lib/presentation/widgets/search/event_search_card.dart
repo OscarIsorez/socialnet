@@ -9,7 +9,7 @@ class EventSearchCard extends StatelessWidget {
 
   final Event event;
 
-  Color _getCategoryColor() {
+  Color _getCategoryColor(BuildContext context) {
     switch (event.category) {
       case EventCategory.music:
         return Colors.purple;
@@ -78,15 +78,17 @@ class EventSearchCard extends StatelessWidget {
                   imageUrl: event.photoUrl!,
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.outline,
                     child: const Center(child: CircularProgressIndicator()),
                   ),
                   errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.outline,
                     child: Icon(
                       Icons.image_not_supported,
                       size: 48,
-                      color: Colors.grey[400],
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -107,10 +109,10 @@ class EventSearchCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getCategoryColor().withOpacity(0.1),
+                          color: _getCategoryColor(context).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _getCategoryColor().withOpacity(0.3),
+                            color: _getCategoryColor(context).withOpacity(0.3),
                           ),
                         ),
                         child: Row(
@@ -119,7 +121,7 @@ class EventSearchCard extends StatelessWidget {
                             Icon(
                               _getCategoryIcon(),
                               size: 14,
-                              color: _getCategoryColor(),
+                              color: _getCategoryColor(context),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -127,7 +129,7 @@ class EventSearchCard extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: _getCategoryColor(),
+                                color: _getCategoryColor(context),
                               ),
                             ),
                           ],
@@ -141,15 +143,17 @@ class EventSearchCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
+                          child: Text(
                             'ENDED',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error,
                             ),
                           ),
                         ),
@@ -159,14 +163,18 @@ class EventSearchCard extends StatelessWidget {
                           Icon(
                             Icons.verified,
                             size: 16,
-                            color: Colors.grey[600],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${event.verificationCount}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -192,7 +200,12 @@ class EventSearchCard extends StatelessWidget {
                   // Description
                   Text(
                     event.description,
-                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -205,7 +218,9 @@ class EventSearchCard extends StatelessWidget {
                       Icon(
                         Icons.access_time,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -213,19 +228,28 @@ class EventSearchCard extends StatelessWidget {
                           _formatDateTime(event.startTime),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ),
                       Icon(
                         Icons.location_on,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${event.location.latitude.toStringAsFixed(3)}, ${event.location.longitude.toStringAsFixed(3)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
                       ),
                     ],
                   ),

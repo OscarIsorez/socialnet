@@ -41,7 +41,9 @@ class MessageBubble extends StatelessWidget {
                 child: Text(
                   sender!.profileName,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -78,7 +80,9 @@ class MessageBubble extends StatelessWidget {
               child: Text(
                 _formatTime(message.timestamp),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[500],
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
                   fontSize: 11,
                 ),
               ),

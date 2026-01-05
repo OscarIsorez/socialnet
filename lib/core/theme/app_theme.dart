@@ -26,8 +26,8 @@ class AppTheme {
           error: AppColors.error,
           surface: AppColors.cardBackground,
           onSurface: AppColors.textPrimary,
-          onPrimary: Colors.white,
-          onSecondary: Colors.white,
+          onPrimary: AppColors.cardBackground,
+          onSecondary: AppColors.cardBackground,
           outline: AppColors.border,
         );
 
@@ -48,7 +48,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.cardBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.border),
@@ -65,7 +65,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.cardBackground,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           textStyle: AppTextStyles.button,
           shape: RoundedRectangleBorder(
@@ -75,7 +75,7 @@ class AppTheme {
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.cardBackground,
         elevation: 4,
         focusElevation: 6,
         hoverElevation: 6,
@@ -84,7 +84,7 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardBackground,
         elevation: 8,
       ),
       chipTheme: ChipThemeData(
@@ -107,10 +107,10 @@ class AppTheme {
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         },
       ),
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.textPrimary,
-        contentTextStyle: TextStyle(color: Colors.white),
+        contentTextStyle: TextStyle(color: AppColors.cardBackground),
       ),
       visualDensity: VisualDensity.adaptivePlatformDensity,
     );

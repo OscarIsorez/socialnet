@@ -63,7 +63,12 @@ class UserSearchCard extends StatelessWidget {
                     // Email
                     Text(
                       user.email,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -104,14 +109,22 @@ class UserSearchCard extends StatelessWidget {
               // Friend count badge
               Column(
                 children: [
-                  Icon(Icons.people, size: 20, color: Colors.grey[600]),
+                  Icon(
+                    Icons.people,
+                    size: 20,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     '${user.friendIds.length}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[600],
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
