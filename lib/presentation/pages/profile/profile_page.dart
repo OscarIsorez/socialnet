@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:socialnet/core/constants/app_colors.dart';
 import 'package:socialnet/domain/entities/event.dart';
 
 import '../../bloc/profile/profile_bloc.dart';
@@ -62,7 +61,11 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading profile',
@@ -117,8 +120,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            AppColors.primary,
-                            AppColors.primary.withValues(alpha: 0.8),
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.8),
                           ],
                         ),
                       ),
@@ -144,7 +149,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        Icon(Icons.event, color: AppColors.primary),
+                        Icon(
+                          Icons.event,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Created Events',

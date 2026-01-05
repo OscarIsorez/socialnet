@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/user.dart';
-import '../../../core/constants/app_colors.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key, required this.user, this.isUpdating = false});
@@ -20,7 +19,9 @@ class ProfileHeader extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundColor: AppColors.primary.withAlpha(10),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withAlpha(10),
                 backgroundImage: user.photoUrl != null
                     ? NetworkImage(user.photoUrl!)
                     : null,
@@ -31,7 +32,7 @@ class ProfileHeader extends StatelessWidget {
                             : '?',
                         style: TextStyle(
                           fontSize: 24,
-                          color: AppColors.primary,
+                          color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       )
@@ -94,9 +95,13 @@ class ProfileHeader extends StatelessWidget {
               children: user.interests.map((interest) {
                 return Chip(
                   label: Text(interest, style: const TextStyle(fontSize: 12)),
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   side: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.3),
                   ),
                 );
               }).toList(),
@@ -134,7 +139,7 @@ class ProfileHeader extends StatelessWidget {
                 Text(
                   '${user.friendIds.length} friends',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
