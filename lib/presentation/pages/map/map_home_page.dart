@@ -137,15 +137,9 @@ class _MapHomePageState extends State<MapHomePage> {
                   bottom: 16,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      FloatingActionButton.small(
-                        heroTag: 'createEvent',
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pushNamed(AppRouter.createEvent),
-                        child: const Icon(Icons.add_location_alt_outlined),
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       FloatingActionButton.small(
                         heroTag: 'recenterMap',
                         onPressed: () {
@@ -158,6 +152,25 @@ class _MapHomePageState extends State<MapHomePage> {
                           );
                         },
                         child: const Icon(Icons.my_location),
+                      ),
+                      FloatingActionButton.extended(
+                        heroTag: 'createEvent',
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pushNamed(AppRouter.createEvent),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        elevation: 6,
+                        icon: const Icon(
+                          Icons.add_location_alt_outlined,
+                          size: 24,
+                        ),
+                        label: const Text(
+                          'Créer événement',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),

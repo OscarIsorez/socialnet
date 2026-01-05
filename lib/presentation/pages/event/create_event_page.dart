@@ -113,6 +113,53 @@ class _CreateEventPageState extends State<CreateEventPage> {
           title: const Text('Créer un événement'),
           elevation: 0,
           centerTitle: true,
+          actions: [
+            BlocBuilder<EventBloc, EventState>(
+              builder: (context, state) {
+                final isLoading =
+                    state.status == EventStatus.loading &&
+                    state.operation == EventOperation.create;
+
+                return Padding(
+                  padding: const EdgeInsets.only(
+                    left: 8.0,
+                    top: 8.0,
+                    right: 16.0,
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : TextButton(
+                          onPressed: _createEvent,
+                          style: TextButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Publier',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                );
+              },
+            ),
+          ],
         ),
         body: Form(
           key: _formKey,
@@ -126,7 +173,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   elevation: 0,
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: TextFormField(
@@ -155,7 +202,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   elevation: 0,
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: TextFormField(
@@ -186,7 +233,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   elevation: 0,
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: CategoryDropdown(
@@ -203,7 +250,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   elevation: 0,
                   color: Theme.of(
                     context,
-                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -230,63 +277,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       ],
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Create Event Button
-                BlocBuilder<EventBloc, EventState>(
-                  builder: (context, state) {
-                    final isLoading =
-                        state.status == EventStatus.loading &&
-                        state.operation == EventOperation.create;
-
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _createEvent,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
-                          elevation: 8,
-                          shadowColor: Theme.of(
-                            context,
-                          ).colorScheme.primary.withOpacity(0.3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.publish_rounded, size: 24),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Publier mon événement',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    );
-                  },
                 ),
 
                 const SizedBox(height: 32), // Extra bottom space
