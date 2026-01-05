@@ -5,7 +5,6 @@ import '../../../domain/entities/event.dart';
 import '../../../domain/entities/location_point.dart';
 import '../../bloc/event/event_bloc.dart';
 import '../../widgets/event/category_dropdowns.dart';
-import '../../widgets/event/date_time_picker_field.dart';
 import '../../widgets/map/location_picker_widget.dart';
 
 class CreateEventPage extends StatefulWidget {
@@ -19,33 +18,20 @@ class _CreateEventPageState extends State<CreateEventPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _photoUrlController = TextEditingController();
 
   EventCategory? _selectedCategory;
-  EventSubCategory? _selectedSubCategory;
   LocationPoint? _selectedLocation;
-  DateTime? _startTime;
-  DateTime? _endTime;
-  bool _isPublic = true;
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _photoUrlController.dispose();
     super.dispose();
   }
 
   void _onCategoryChanged(EventCategory? category) {
     setState(() {
       _selectedCategory = category;
-      _selectedSubCategory = null; // Reset subcategory when category changes
-    });
-  }
-
-  void _onSubCategoryChanged(EventSubCategory? subCategory) {
-    setState(() {
-      _selectedSubCategory = subCategory;
     });
   }
 
@@ -55,31 +41,19 @@ class _CreateEventPageState extends State<CreateEventPage> {
     });
   }
 
-  void _onStartTimeChanged(DateTime? startTime) {
-    setState(() {
-      _startTime = startTime;
-      // If end time is before start time, clear it
-      if (_endTime != null &&
-          startTime != null &&
-          _endTime!.isBefore(startTime)) {
-        _endTime = null;
-      }
-    });
-  }
-
-  void _onEndTimeChanged(DateTime? endTime) {
-    setState(() {
-      _endTime = endTime;
-    });
-  }
-
-  String? _validateEndTime(DateTime? endTime) {
-    if (endTime != null &&
-        _startTime != null &&
-        endTime.isBefore(_startTime!)) {
-      return 'L\'heure de fin doit être après l\'heure de début';
+  EventSubCategory _getDefaultSubCategory(EventCategory category) {
+    switch (category) {
+      case EventCategory.music:
+        return EventSubCategory.general;
+      case EventCategory.sports:
+        return EventSubCategory.general;
+      case EventCategory.social:
+        return EventSubCategory.meetup;
+      case EventCategory.problem:
+        return EventSubCategory.waterLeak;
+      case EventCategory.other:
+        return EventSubCategory.general;
     }
-    return null;
   }
 
   void _createEvent() {
@@ -99,14 +73,12 @@ class _CreateEventPageState extends State<CreateEventPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         category: _selectedCategory!,
-        subCategory: _selectedSubCategory!,
+        subCategory: _getDefaultSubCategory(_selectedCategory!),
         location: _selectedLocation!,
-        photoUrl: _photoUrlController.text.trim().isNotEmpty
-            ? _photoUrlController.text.trim()
-            : null,
-        startTime: _startTime,
-        endTime: _endTime,
-        isActive: _isPublic,
+        photoUrl: null,
+        startTime: null,
+        endTime: null,
+        isActive: true, // Default to public
         createdAt: DateTime.now(),
       );
 
@@ -139,29 +111,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Créer un événement'),
-          actions: [
-            BlocBuilder<EventBloc, EventState>(
-              builder: (context, state) {
-                if (state.status == EventStatus.loading &&
-                    state.operation == EventOperation.create) {
-                  return const Padding(
-                    padding: EdgeInsets.only(right: 16.0),
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  );
-                }
-                return TextButton(
-                  onPressed: _createEvent,
-                  child: const Text('Publier'),
-                );
-              },
-            ),
-          ],
+          elevation: 0,
+          centerTitle: true,
         ),
         body: Form(
           key: _formKey,
@@ -171,175 +122,174 @@ class _CreateEventPageState extends State<CreateEventPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title Field
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Titre *',
-                    border: OutlineInputBorder(),
-                    hintText: 'ex: Concert de jazz au parc',
+                Card(
+                  elevation: 0,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nom de votre événement',
+                        border: InputBorder.none,
+                        hintText: 'ex: Concert de jazz au parc',
+                        prefixIcon: Icon(Icons.event),
+                      ),
+                      style: const TextStyle(fontSize: 16),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Le titre est obligatoire';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  maxLength: 60,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Le titre est obligatoire';
-                    }
-                    if (value.trim().length < 3) {
-                      return 'Le titre doit contenir au moins 3 caractères';
-                    }
-                    return null;
-                  },
                 ),
 
                 const SizedBox(height: 16),
 
                 // Description Field
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description *',
-                    border: OutlineInputBorder(),
-                    hintText: 'Décrivez votre événement...',
-                    alignLabelWithHint: true,
-                  ),
-                  maxLines: 4,
-                  maxLength: 200,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'La description est obligatoire';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'La description doit contenir au moins 10 caractères';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // Category Dropdowns
-                Row(
-                  children: [
-                    Expanded(
-                      child: CategoryDropdown(
-                        selectedCategory: _selectedCategory,
-                        onChanged: _onCategoryChanged,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: SubCategoryDropdown(
-                        selectedCategory: _selectedCategory,
-                        selectedSubCategory: _selectedSubCategory,
-                        onChanged: _onSubCategoryChanged,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Photo URL Field (optional)
-                TextFormField(
-                  controller: _photoUrlController,
-                  decoration: const InputDecoration(
-                    labelText: 'URL de l\'image (optionnel)',
-                    border: OutlineInputBorder(),
-                    hintText: 'https://example.com/image.jpg',
-                  ),
-                  validator: (value) {
-                    if (value != null && value.trim().isNotEmpty) {
-                      final uri = Uri.tryParse(value.trim());
-                      if (uri == null || !uri.hasScheme) {
-                        return 'Veuillez entrer une URL valide';
-                      }
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // Privacy Switch
                 Card(
+                  elevation: 0,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withOpacity(0.3),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Row(
+                    child: TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Décrivez votre événement',
+                        border: InputBorder.none,
+                        hintText: 'Quelques mots sur votre événement...',
+                        prefixIcon: Icon(Icons.description),
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 3,
+                      style: const TextStyle(fontSize: 16),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'La description est obligatoire';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Category Selection
+                Card(
+                  elevation: 0,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: CategoryDropdown(
+                      selectedCategory: _selectedCategory,
+                      onChanged: _onCategoryChanged,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Location Picker
+                Card(
+                  elevation: 0,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceVariant.withOpacity(0.3),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          _isPublic ? Icons.public : Icons.lock,
-                          color: Theme.of(context).colorScheme.primary,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Où se déroule l\'événement ?',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _isPublic
-                                    ? 'Événement public'
-                                    : 'Événement privé',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              Text(
-                                _isPublic
-                                    ? 'Visible par tous les utilisateurs'
-                                    : 'Visible uniquement par vous',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Switch(
-                          value: _isPublic,
-                          onChanged: (value) =>
-                              setState(() => _isPublic = value),
+                        const SizedBox(height: 8),
+                        LocationPickerWidget(
+                          onLocationSelected: _onLocationSelected,
+                          initialLocation: _selectedLocation,
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 32),
 
-                // Date & Time Pickers
-                Text(
-                  'Horaires (optionnel)',
-                  style: Theme.of(context).textTheme.titleMedium,
+                // Create Event Button
+                BlocBuilder<EventBloc, EventState>(
+                  builder: (context, state) {
+                    final isLoading =
+                        state.status == EventStatus.loading &&
+                        state.operation == EventOperation.create;
+
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _createEvent,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary,
+                          elevation: 8,
+                          shadowColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.publish_rounded, size: 24),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Publier mon événement',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 8),
 
-                DateTimePickerField(
-                  label: 'Début de l\'événement',
-                  selectedDateTime: _startTime,
-                  onChanged: _onStartTimeChanged,
-                  firstDate: DateTime.now(),
-                ),
-
-                const SizedBox(height: 8),
-
-                DateTimePickerField(
-                  label: 'Fin de l\'événement',
-                  selectedDateTime: _endTime,
-                  onChanged: _onEndTimeChanged,
-                  firstDate: _startTime ?? DateTime.now(),
-                  validator: _validateEndTime,
-                ),
-
-                const SizedBox(height: 24),
-
-                // Location Picker
-                Text(
-                  'Position *',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-
-                LocationPickerWidget(
-                  onLocationSelected: _onLocationSelected,
-                  initialLocation: _selectedLocation,
-                ),
-
-                const SizedBox(height: 80), // Extra space for FAB
+                const SizedBox(height: 32), // Extra bottom space
               ],
             ),
           ),
