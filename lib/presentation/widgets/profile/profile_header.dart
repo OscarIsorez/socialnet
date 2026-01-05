@@ -20,7 +20,7 @@ class ProfileHeader extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withAlpha(10),
                 backgroundImage: user.photoUrl != null
                     ? NetworkImage(user.photoUrl!)
                     : null,
@@ -50,12 +50,6 @@ class ProfileHeader extends StatelessWidget {
                       )
                     else
                       const SizedBox.shrink(),
-                    Text(
-                      user.profileName,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -100,8 +94,10 @@ class ProfileHeader extends StatelessWidget {
               children: user.interests.map((interest) {
                 return Chip(
                   label: Text(interest, style: const TextStyle(fontSize: 12)),
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  side: BorderSide(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
                 );
               }).toList(),
             ),

@@ -101,13 +101,13 @@ class _ProfilePageState extends State<ProfilePage> {
             return CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  expandedHeight: 200,
+                  expandedHeight: 120,
                   pinned: true,
                   flexibleSpace: FlexibleSpaceBar(
                     title: Text(
                       user.profileName,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -129,7 +129,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         null) // Only show edit for current user
                       IconButton(
                         onPressed: isUpdating ? null : _showEditProfile,
-                        icon: const Icon(Icons.edit, color: Colors.white),
+                        icon: Icon(
+                          Icons.edit,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                   ],
                 ),
@@ -146,7 +149,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         Text(
                           'Created Events',
                           style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                         ),
                       ],
                     ),
