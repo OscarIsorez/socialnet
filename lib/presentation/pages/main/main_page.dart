@@ -53,7 +53,7 @@ class _MainPageState extends State<MainPage> {
           ),
         ],
       ),
-      body: _pages[_selectedIndex],
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

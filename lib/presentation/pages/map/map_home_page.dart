@@ -23,7 +23,8 @@ class MapHomePage extends StatefulWidget {
   State<MapHomePage> createState() => _MapHomePageState();
 }
 
-class _MapHomePageState extends State<MapHomePage> {
+class _MapHomePageState extends State<MapHomePage>
+    with AutomaticKeepAliveClientMixin {
   static const LocationPoint _defaultCenter = LocationPoint(
     latitude: 46.58,
     longitude: 0.34,
@@ -81,7 +82,11 @@ class _MapHomePageState extends State<MapHomePage> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final content = MultiBlocListener(
       listeners: [
         BlocListener<MapBloc, MapState>(

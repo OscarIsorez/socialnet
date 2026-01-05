@@ -15,7 +15,8 @@ class ConversationsPage extends StatefulWidget {
   State<ConversationsPage> createState() => _ConversationsPageState();
 }
 
-class _ConversationsPageState extends State<ConversationsPage> {
+class _ConversationsPageState extends State<ConversationsPage>
+    with AutomaticKeepAliveClientMixin {
   // Mock data - replace with actual data from your backend/BLoC
   final List<Conversation> _conversations = [
     Conversation(
@@ -141,7 +142,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       body: _conversations.isEmpty
           ? EmptyConversationsState(onStartConversation: _showCreateOptions)
