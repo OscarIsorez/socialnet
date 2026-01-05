@@ -24,4 +24,11 @@ class AppColors {
   static const Color textPrimary = Color(0xFF0F172A);
   static const Color textSecondary = Color(0xFF475569);
   static const Color border = Color(0xFFE2E8F0);
+
+  // Event Category Colors
+  static const Color musicCategory = Color(0xFF8B5CF6); // Purple
+  static const Color sportsCategory = Color(0xFFF97316); // Orange
+  static const Color socialCategory = Color(0xFF3B82F6); // Blue
+  static const Color problemCategory = Color(0xFFEF4444); // Red
+  static const Color otherCategory = Color(0xFF6B7280); // Gray
 }

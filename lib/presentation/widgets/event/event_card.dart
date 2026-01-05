@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/event.dart';
 
 class EventCard extends StatelessWidget {
@@ -45,7 +46,7 @@ class EventCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(context).withValues(alpha: 0.12),
+                      color: _getCategoryColor().withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -54,7 +55,7 @@ class EventCard extends StatelessWidget {
                         Icon(
                           _getCategoryIcon(),
                           size: 14,
-                          color: _getCategoryColor(context),
+                          color: _getCategoryColor(),
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -62,7 +63,7 @@ class EventCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: _getCategoryColor(context),
+                            color: _getCategoryColor(),
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -217,9 +218,7 @@ class EventCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: _getCategoryColor(
-                          context,
-                        ).withValues(alpha: 0.12),
+                        color: _getCategoryColor().withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -228,7 +227,7 @@ class EventCard extends StatelessWidget {
                           Icon(
                             _getCategoryIcon(),
                             size: 16,
-                            color: _getCategoryColor(context),
+                            color: _getCategoryColor(),
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -236,7 +235,7 @@ class EventCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: _getCategoryColor(context),
+                              color: _getCategoryColor(),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -567,18 +566,18 @@ class EventCard extends StatelessWidget {
     }
   }
 
-  Color _getCategoryColor(BuildContext context) {
+  Color _getCategoryColor() {
     switch (event.category) {
       case EventCategory.music:
-        return Theme.of(context).colorScheme.tertiary;
+        return AppColors.musicCategory;
       case EventCategory.sports:
-        return Theme.of(context).colorScheme.primary;
+        return AppColors.sportsCategory;
       case EventCategory.social:
-        return Theme.of(context).colorScheme.primary;
+        return AppColors.socialCategory;
       case EventCategory.problem:
-        return Theme.of(context).colorScheme.error;
+        return AppColors.problemCategory;
       case EventCategory.other:
-        return Theme.of(context).colorScheme.secondary;
+        return AppColors.otherCategory;
     }
   }
 

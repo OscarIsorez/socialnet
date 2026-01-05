@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/location_point.dart';
 
@@ -22,15 +23,15 @@ class MapView extends StatelessWidget {
   Color _getCategoryColor(EventCategory category) {
     switch (category) {
       case EventCategory.music:
-        return Colors.purple;
+        return AppColors.musicCategory;
       case EventCategory.sports:
-        return Colors.orange;
+        return AppColors.sportsCategory;
       case EventCategory.social:
-        return Colors.blue;
+        return AppColors.socialCategory;
       case EventCategory.problem:
-        return Colors.red;
+        return AppColors.problemCategory;
       case EventCategory.other:
-        return Colors.grey;
+        return AppColors.otherCategory;
     }
   }
 
@@ -61,10 +62,15 @@ class MapView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: _getCategoryColor(event.category),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.surface,
+                      width: 2,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.3),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -72,7 +78,7 @@ class MapView extends StatelessWidget {
                   ),
                   child: Icon(
                     _getCategoryIcon(event.category),
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     size: 20,
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/event.dart';
 
 class QuickActionChips extends StatelessWidget {
@@ -33,35 +34,35 @@ class QuickActionChips extends StatelessWidget {
                 'Music',
                 Icons.music_note,
                 EventCategory.music,
-                Theme.of(context).colorScheme.tertiary,
+                AppColors.musicCategory,
               ),
               _buildCategoryChip(
                 context,
                 'Sports',
                 Icons.sports_soccer,
                 EventCategory.sports,
-                Theme.of(context).colorScheme.primary,
+                AppColors.sportsCategory,
               ),
               _buildCategoryChip(
                 context,
                 'Social',
                 Icons.people,
                 EventCategory.social,
-                Theme.of(context).colorScheme.secondary,
+                AppColors.socialCategory,
               ),
               _buildCategoryChip(
                 context,
                 'Problems',
                 Icons.warning,
                 EventCategory.problem,
-                Theme.of(context).colorScheme.error,
+                AppColors.problemCategory,
               ),
               _buildCategoryChip(
                 context,
                 'Other',
                 Icons.category,
                 EventCategory.other,
-                Theme.of(context).colorScheme.outline,
+                AppColors.otherCategory,
               ),
             ],
           ),

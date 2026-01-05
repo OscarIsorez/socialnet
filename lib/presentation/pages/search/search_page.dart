@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/search_filters.dart';
 import '../../bloc/search/search_bloc.dart';
-import '../../widgets/search/event_search_card.dart';
+import '../../widgets/event/event_card.dart';
 import '../../widgets/search/filter_bottom_sheet.dart';
 import '../../widgets/search/quick_action_chips.dart';
 import '../../widgets/search/user_search_card.dart';
@@ -238,7 +238,7 @@ class _SearchPageState extends State<SearchPage> {
           children: [
             if (hasEvents) ...[
               if (hasUsers) _buildSectionHeader('Events'),
-              ...state.events.map((event) => EventSearchCard(event: event)),
+              ...state.events.map((event) => EventCard(event: event)),
             ],
             if (hasUsers) ...[
               if (hasEvents) const SizedBox(height: 16),
