@@ -53,9 +53,12 @@ class _SplashPageState extends State<SplashPage> {
         },
         child: Container(
           width: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF312E81), Color(0xFF6366F1)],
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).colorScheme.secondary,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

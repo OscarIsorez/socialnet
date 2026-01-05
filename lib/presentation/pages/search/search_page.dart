@@ -32,6 +32,7 @@ class _SearchPageState extends State<SearchPage>
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -39,8 +40,15 @@ class _SearchPageState extends State<SearchPage>
   void _onSearchChanged() {
     _debounceTimer?.cancel();
 
+    final bool previousKeepAlive = wantKeepAlive;
+
     // Rebuild to show/hide clear button
     setState(() {});
+
+    // Update keep alive state if it changed
+    if (previousKeepAlive != wantKeepAlive) {
+      updateKeepAlive();
+    }
 
     if (_searchController.text.isEmpty) {
       setState(() => _isSearching = false);
@@ -58,7 +66,14 @@ class _SearchPageState extends State<SearchPage>
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
 
+    final bool previousKeepAlive = wantKeepAlive;
     setState(() => _isSearching = true);
+
+    // Update keep alive state if it changed
+    if (previousKeepAlive != wantKeepAlive) {
+      updateKeepAlive();
+    }
+
     FocusScope.of(context).unfocus();
 
     // Search both events and users simultaneously
@@ -112,7 +127,7 @@ class _SearchPageState extends State<SearchPage>
   }
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => _isSearching || _searchController.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {

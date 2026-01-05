@@ -9,6 +9,7 @@ import '../../../domain/entities/location_point.dart';
 import '../../bloc/event/event_bloc.dart';
 import '../../bloc/map/map_bloc.dart';
 import '../../routes/app_router.dart';
+import '../../widgets/common/animated_create_event_button.dart';
 import '../../widgets/common/centered_progress.dart';
 import '../../widgets/map/category_filter_bar.dart';
 import '../../widgets/map/event_detail_sheet.dart';
@@ -158,24 +159,17 @@ class _MapHomePageState extends State<MapHomePage>
                         },
                         child: const Icon(Icons.my_location),
                       ),
-                      FloatingActionButton.extended(
+                      AnimatedCreateEventButton(
                         heroTag: 'createEvent',
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pushNamed(AppRouter.createEvent),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary,
-                        elevation: 6,
-                        icon: const Icon(
-                          Icons.add_location_alt_outlined,
-                          size: 24,
-                        ),
-                        label: const Text(
-                          'Créer événement',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        onPressed: () {
+                          Navigator.of(
+                            context,
+                          ).pushNamed(AppRouter.createEvent);
+                        },
+                        size: CreateEventButtonSize.large,
+                        text: 'Créer ',
+                        icon: Icons.add_location_alt_outlined,
+                        showPulse: true,
                       ),
                     ],
                   ),
@@ -201,11 +195,7 @@ class _MapHomePageState extends State<MapHomePage>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed(AppRouter.createEvent),
-        icon: const Icon(Icons.add_location_alt_outlined),
-        label: const Text('Nouvel événement'),
-      ),
+      // Remove duplicate FloatingActionButton as it's already in the Stack
       body: content,
     );
   }
