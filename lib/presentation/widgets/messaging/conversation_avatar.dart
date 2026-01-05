@@ -19,8 +19,8 @@ class ConversationAvatar extends StatelessWidget {
         CircleAvatar(
           radius: size / 2,
           backgroundColor: conversation.isGroup
-              ? Colors.purple[100]
-              : Colors.blue[100],
+              ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.2)
+              : Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
           backgroundImage: conversation.groupImageUrl != null
               ? NetworkImage(conversation.groupImageUrl!)
               : null,
@@ -28,8 +28,8 @@ class ConversationAvatar extends StatelessWidget {
               ? Icon(
                   conversation.isGroup ? Icons.group : Icons.person,
                   color: conversation.isGroup
-                      ? Colors.purple[700]
-                      : Colors.blue[700],
+                      ? Theme.of(context).colorScheme.tertiary
+                      : Theme.of(context).colorScheme.primary,
                   size: size * 0.5,
                 )
               : null,
@@ -41,17 +41,20 @@ class ConversationAvatar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: Theme.of(context).colorScheme.error,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2,
+                ),
               ),
               constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Text(
                 conversation.unreadCount > 99
                     ? '99+'
                     : conversation.unreadCount.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onError,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),

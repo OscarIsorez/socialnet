@@ -32,9 +32,12 @@ class CreateConversationSheet extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Colors.blue,
-              child: Icon(Icons.person_add, color: Colors.white),
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Icon(
+                Icons.person_add,
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
             ),
             title: const Text('New Contact'),
             subtitle: const Text('Start a conversation with someone'),
@@ -44,9 +47,12 @@ class CreateConversationSheet extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Icon(Icons.group_add, color: Colors.white),
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              child: Icon(
+                Icons.group_add,
+                color: Theme.of(context).colorScheme.onSecondary,
+              ),
             ),
             title: const Text('Create Group'),
             subtitle: const Text('Start a group conversation'),

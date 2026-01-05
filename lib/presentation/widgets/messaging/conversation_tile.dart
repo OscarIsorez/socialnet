@@ -46,8 +46,8 @@ class ConversationTile extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.blue,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
                 shape: BoxShape.circle,
               ),
             ),
@@ -62,8 +62,10 @@ class ConversationTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: conversation.unreadCount > 0
-                  ? Colors.black87
-                  : Colors.grey[600],
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: conversation.unreadCount > 0
                   ? FontWeight.w500
                   : FontWeight.normal,
@@ -74,13 +76,23 @@ class ConversationTile extends StatelessWidget {
             children: [
               Text(
                 timeText,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 12,
+                ),
               ),
               if (conversation.isGroup) ...[
                 const SizedBox(width: 8),
                 Text(
                   '${conversation.memberCount} members',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ],
