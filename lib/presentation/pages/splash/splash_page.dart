@@ -29,7 +29,7 @@ class _SplashPageState extends State<SplashPage> {
       // Show onboarding on first run
       try {
         final prefs = await SharedPreferences.getInstance();
-        final seen = false;
+        final seen = prefs.getBool('seenOnboarding') ?? false;
         if (!seen) {
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, AppRouter.onboarding);
