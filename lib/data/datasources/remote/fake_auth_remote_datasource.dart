@@ -87,7 +87,11 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   @override
   Future<UserModel?> getCurrentUser() async {
     await Future<void>.delayed(const Duration(milliseconds: 200));
-    final key = _currentUserEmail;
+    // final key = _currentUserEmail;
+
+    // TO REMOVE IN PROD
+    final key = "demo@r.com";
+
     if (key == null) {
       return null;
     }
