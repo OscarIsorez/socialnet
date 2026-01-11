@@ -22,11 +22,14 @@ class _SplashPageState extends State<SplashPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
+      // Add a small delay to ensure UI is stable
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+
       // Show onboarding on first run
       try {
         final prefs = await SharedPreferences.getInstance();
-        final seen = prefs.getBool('seenOnboarding') ?? false;
-
+        final seen = false;
         if (!seen) {
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, AppRouter.onboarding);

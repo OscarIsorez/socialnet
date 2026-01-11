@@ -137,7 +137,10 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pushReplacementNamed(
+                      context,
+                      AppRouter.login,
+                    ),
                     child: const Text('Back to sign in'),
                   ),
                 ],

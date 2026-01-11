@@ -42,6 +42,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seenOnboarding', true);
     if (!mounted) return;
+
+    // Add small delay to ensure state is properly saved
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+
     Navigator.pushReplacementNamed(context, AppRouter.signup);
   }
 
@@ -49,6 +54,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seenOnboarding', true);
     if (!mounted) return;
+
+    // Add small delay to ensure state is properly saved
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
+
     Navigator.pushReplacementNamed(context, AppRouter.login);
   }
 
@@ -64,11 +74,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
       appBar: AppBar(
         title: const Text(AppConstants.appName),
         elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         leading: TextButton(
           onPressed: _skipToSignIn,
           child: Text(
             'Skip',
-            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ),
         actions: [
@@ -76,7 +88,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
             onPressed: _finishOnboarding,
             child: Text(
               'Sign Up',
-              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
             ),
           ),
         ],
@@ -99,7 +111,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         Icon(
                           slide.icon,
                           size: 96,
-                          color: Theme.of(context).primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(height: 24),
                         Text(
@@ -139,8 +151,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         height: 8,
                         decoration: BoxDecoration(
                           color: _index == i
-                              ? Theme.of(context).primaryColor
-                              : Theme.of(context).colorScheme.outline,
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.outline.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -150,9 +164,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   if (_index == _slides.length - 1)
                     TextButton(
                       onPressed: _skipToSignIn,
-                      child: const Text('Sign In'),
+                      child: Text(
+                        'Sign In',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
                     ),
-                  TextButton(
+                  ElevatedButton(
                     onPressed: () {
                       if (_index < _slides.length - 1) {
                         _controller.nextPage(
@@ -163,6 +182,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         _finishOnboarding();
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
                     child: Text(
                       _index < _slides.length - 1 ? 'Next' : 'Get Started',
                     ),
