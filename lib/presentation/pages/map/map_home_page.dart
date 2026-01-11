@@ -11,6 +11,8 @@ import '../../bloc/map/map_bloc.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/common/animated_create_event_button.dart';
 import '../../widgets/common/centered_progress.dart';
+import '../../widgets/event/event_creation_dialog.dart';
+import '../../widgets/event/location_selection_overlay.dart';
 import '../../widgets/map/category_filter_bar.dart';
 import '../../widgets/map/event_detail_sheet.dart';
 import '../../widgets/map/map_view.dart';
@@ -80,6 +82,49 @@ class _MapHomePageState extends State<MapHomePage>
         },
       ),
     );
+  }
+
+  void _startEventCreation() {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return LocationSelectionOverlay(
+            initialCenter: _defaultCenter,
+            onLocationSelected: _showEventCreationDialog,
+            onCancel: () => Navigator.of(context).pop(),
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
+  void _showEventCreationDialog(LocationPoint selectedLocation) {
+    Navigator.of(context).pop(); // Close the location overlay
+
+    // Small delay to ensure smooth transition
+    Future.delayed(const Duration(milliseconds: 100), () {
+      Navigator.of(context).push(
+        PageRouteBuilder<void>(
+          opaque: false,
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return EventCreationDialog(
+              selectedLocation: selectedLocation,
+              onEventCreated: () {
+                // Refresh events after creation
+                _loadEvents(category: _selectedCategory);
+              },
+            );
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+    });
   }
 
   @override
@@ -161,11 +206,7 @@ class _MapHomePageState extends State<MapHomePage>
                       ),
                       AnimatedCreateEventButton(
                         heroTag: 'createEvent',
-                        onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).pushNamed(AppRouter.createEvent);
-                        },
+                        onPressed: _startEventCreation,
                         size: CreateEventButtonSize.large,
                         text: 'Créer ',
                         icon: Icons.add_location_alt_outlined,
