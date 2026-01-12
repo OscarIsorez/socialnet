@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -11,6 +13,7 @@ import 'data/datasources/remote/event_remote_datasource.dart';
 import 'data/datasources/remote/fake_event_remote_datasource.dart';
 import 'data/datasources/remote/fake_search_remote_datasource.dart';
 import 'data/datasources/remote/fake_social_remote_datasource.dart';
+import 'data/datasources/remote/firebase_social_remote_datasource.dart';
 import 'data/datasources/remote/search_remote_datasource.dart';
 import 'data/datasources/remote/social_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
@@ -47,7 +50,9 @@ import 'presentation/bloc/search/search_bloc.dart';
 final GetIt getIt = GetIt.instance;
 
 // Set to true to use Firebase, false to use fake data sources
-const bool kUseFirebaseAuth = false; // Set to true to test with real Firebase
+const bool kUseFirebaseAuth = true; // Set to true to test with real Firebase
+const bool kUseFirebaseSocial =
+    true; // Set to true to use Firebase for profiles
 
 Future<void> configureDependencies() async {
   // External Dependencies
@@ -59,8 +64,18 @@ Future<void> configureDependencies() async {
     getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   }
 
+  if (!getIt.isRegistered<FirebaseFirestore>()) {
+    getIt.registerLazySingleton<FirebaseFirestore>(
+      () => FirebaseFirestore.instance,
+    );
+  }
+
   if (!getIt.isRegistered<GoogleSignIn>()) {
-    getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn.instance);
+    getIt.registerSingletonAsync<GoogleSignIn>(() async {
+      final googleSignIn = GoogleSignIn.instance;
+      await googleSignIn.initialize();
+      return googleSignIn;
+    });
   }
 
   if (!getIt.isRegistered<NetworkInfo>()) {
@@ -70,13 +85,15 @@ Future<void> configureDependencies() async {
   }
 
   if (!getIt.isRegistered<AuthRemoteDataSource>()) {
-    getIt.registerLazySingleton<AuthRemoteDataSource>(
+    getIt.registerSingletonWithDependencies<AuthRemoteDataSource>(
       () => kUseFirebaseAuth
           ? FirebaseAuthRemoteDataSourceImpl(
               firebaseAuth: getIt.get<FirebaseAuth>(),
+              firestore: getIt.get<FirebaseFirestore>(),
               googleSignIn: getIt.get<GoogleSignIn>(),
             )
           : FakeAuthRemoteDataSource(),
+      dependsOn: kUseFirebaseAuth ? [GoogleSignIn] : [],
     );
   }
 
@@ -88,7 +105,12 @@ Future<void> configureDependencies() async {
 
   if (!getIt.isRegistered<SocialRemoteDataSource>()) {
     getIt.registerLazySingleton<SocialRemoteDataSource>(
-      FakeSocialRemoteDataSource.new,
+      () => kUseFirebaseSocial
+          ? FirebaseSocialRemoteDataSource(
+              firestore: getIt.get<FirebaseFirestore>(),
+              firebaseAuth: getIt.get<FirebaseAuth>(),
+            )
+          : FakeSocialRemoteDataSource(),
     );
   }
 
@@ -268,5 +290,10 @@ Future<void> configureDependencies() async {
         getSuggestedEventsUseCase: getIt(),
       ),
     );
+  }
+
+  // Wait for all async singletons to be ready
+  if (kUseFirebaseAuth) {
+    await getIt.allReady();
   }
 }

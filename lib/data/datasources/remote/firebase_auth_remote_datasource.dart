@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../core/error/exceptions.dart';
@@ -7,23 +9,40 @@ import 'auth_remote_datasource.dart';
 
 class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
   bool _isGoogleSignInInitialized = false;
 
   FirebaseAuthRemoteDataSourceImpl({
     required FirebaseAuth firebaseAuth,
+    required FirebaseFirestore firestore,
     required GoogleSignIn googleSignIn,
   }) : _firebaseAuth = firebaseAuth,
+       _firestore = firestore,
        _googleSignIn = googleSignIn;
 
   /// Initialize Google Sign-In (required for v7+)
   Future<void> _initializeGoogleSignIn() async {
     if (!_isGoogleSignInInitialized) {
       try {
+        await _handleWebPlatform();
         await _googleSignIn.initialize();
         _isGoogleSignInInitialized = true;
       } catch (e) {
         throw AuthException(message: 'Failed to initialize Google Sign-In: $e');
+      }
+    }
+  }
+
+  /// Handle web platform specific requirements
+  Future<void> _handleWebPlatform() async {
+    if (kIsWeb) {
+      // Web has different initialization requirements
+      await _googleSignIn.initialize();
+
+      // Web doesn't support all methods
+      if (!_googleSignIn.supportsAuthenticate()) {
+        throw UnsupportedError('Web platform requires different sign-in flow');
       }
     }
   }
@@ -70,7 +89,15 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await user.updateDisplayName(profileName);
       await user.reload();
 
-      return _mapFirebaseUserToUserModel(user, profileName: profileName);
+      final userModel = _mapFirebaseUserToUserModel(
+        user,
+        profileName: profileName,
+      );
+
+      // Synchronize with Firestore
+      await _syncUserWithFirestore(userModel);
+
+      return userModel;
     } on FirebaseAuthException catch (e) {
       throw AuthException(message: _mapFirebaseAuthErrorMessage(e));
     } catch (e) {
@@ -84,16 +111,56 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final user = _firebaseAuth.currentUser;
       if (user == null) return null;
 
-      // Refresh user info to get latest data
-      await user.reload();
-      final refreshedUser = _firebaseAuth.currentUser;
+      // Try to get user from Firestore first
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
 
-      return refreshedUser != null
-          ? _mapFirebaseUserToUserModel(refreshedUser)
-          : null;
+      if (userDoc.exists) {
+        return UserModel.fromJson({'id': userDoc.id, ...userDoc.data()!});
+      } else {
+        // If not in Firestore, create from Firebase Auth and sync
+        await user.reload();
+        final refreshedUser = _firebaseAuth.currentUser;
+        if (refreshedUser != null) {
+          final userModel = _mapFirebaseUserToUserModel(refreshedUser);
+          await _syncUserWithFirestore(userModel);
+          return userModel;
+        }
+        return null;
+      }
     } catch (e) {
       // Return null if there's any error getting current user
       return null;
+    }
+  }
+
+  /// Synchronize user data with Firestore
+  Future<void> _syncUserWithFirestore(UserModel user) async {
+    try {
+      final userDoc = _firestore.collection('users').doc(user.id);
+
+      // Check if user already exists
+      final existingDoc = await userDoc.get();
+
+      if (existingDoc.exists) {
+        // User exists, only update basic fields from auth
+        await userDoc.update({
+          'email': user.email,
+          'profileName': user.profileName,
+          'photoUrl': user.photoUrl,
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // New user, create full document
+        final userData = user.toJson();
+        userData.remove('id'); // Don't store ID in document data
+        userData['createdAt'] = FieldValue.serverTimestamp();
+        userData['lastLoginAt'] = FieldValue.serverTimestamp();
+
+        await userDoc.set(userData);
+      }
+    } catch (e) {
+      // Log error but don't throw - auth should succeed even if Firestore sync fails
+      print('Warning: Failed to sync user with Firestore: $e');
     }
   }
 
@@ -138,7 +205,12 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
 
-      return _mapFirebaseUserToUserModel(user);
+      final userModel = _mapFirebaseUserToUserModel(user);
+
+      // Synchronize with Firestore
+      await _syncUserWithFirestore(userModel);
+
+      return userModel;
     } on GoogleSignInException catch (e) {
       throw AuthException(
         message:
