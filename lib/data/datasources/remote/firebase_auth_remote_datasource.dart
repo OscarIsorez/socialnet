@@ -39,11 +39,7 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     if (kIsWeb) {
       // Web has different initialization requirements
       await _googleSignIn.initialize();
-
-      // Web doesn't support all methods
-      if (!_googleSignIn.supportsAuthenticate()) {
-        throw UnsupportedError('Web platform requires different sign-in flow');
-      }
+      // Note: Web platform may use different authentication flow
     }
   }
 
@@ -179,19 +175,45 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     await _initializeGoogleSignIn();
 
     try {
-      // Trigger the authentication flow using v7 API
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
-        scopeHint: ['email', 'profile'],
-      );
+      GoogleSignInAccount googleUser;
 
-      // Get authorization for Firebase scopes
+      if (kIsWeb || !_googleSignIn.supportsAuthenticate()) {
+        // For web or platforms that don't support authenticate()
+        // Try lightweight authentication first
+        final result = _googleSignIn.attemptLightweightAuthentication();
+
+        GoogleSignInAccount? account;
+        if (result is Future<GoogleSignInAccount?>) {
+          account = await result;
+        } else {
+          account = result as GoogleSignInAccount?;
+        }
+
+        if (account == null) {
+          throw const AuthException(message: 'Google sign-in was cancelled');
+        }
+        googleUser = account;
+      } else {
+        // For mobile platforms that support authenticate()
+        googleUser = await _googleSignIn.authenticate(
+          scopeHint: ['email', 'profile'],
+        );
+      }
+
+      // Get authentication details (synchronous in v7)
+      final googleAuth = googleUser.authentication;
+
+      // For v7, we need to get tokens from authorizationClient
       final authClient = _googleSignIn.authorizationClient;
-      final authorization = await authClient.authorizationForScopes(['email']);
+      final authorization = await authClient.authorizationForScopes([
+        'email',
+        'profile',
+      ]);
 
-      // Create a new credential
+      // Create Firebase credential with tokens
       final credential = GoogleAuthProvider.credential(
         accessToken: authorization?.accessToken,
-        idToken: googleUser.authentication.idToken,
+        idToken: googleAuth.idToken,
       );
 
       // Sign in to Firebase with the Google credential
