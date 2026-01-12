@@ -111,7 +111,10 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
 
       if (userDoc.exists) {
-        return UserModel.fromJson({'id': userDoc.id, ...userDoc.data()!});
+        final data = userDoc.data()!;
+
+        final jsonData = _convertFirestoreData({'id': userDoc.id, ...data});
+        return UserModel.fromJson(jsonData);
       } else {
         // If not in Firestore, create from Firebase Auth and sync
         await user.reload();
@@ -257,6 +260,24 @@ class FirebaseAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       throw AuthException(message: 'An unexpected error occurred: $e');
     }
+  }
+
+  /// Convert Firestore data types to JSON-compatible types
+  Map<String, dynamic> _convertFirestoreData(Map<String, dynamic> data) {
+    final converted = <String, dynamic>{};
+
+    for (final entry in data.entries) {
+      if (entry.value is Timestamp) {
+        // Convert Firestore Timestamp to ISO 8601 string
+        converted[entry.key] = (entry.value as Timestamp)
+            .toDate()
+            .toIso8601String();
+      } else {
+        converted[entry.key] = entry.value;
+      }
+    }
+
+    return converted;
   }
 
   UserModel _mapFirebaseUserToUserModel(User user, {String? profileName}) {

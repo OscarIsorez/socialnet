@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:socialnet/domain/entities/event.dart';
 
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_state.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../bloc/profile/profile_event.dart';
 import '../../bloc/profile/profile_state.dart';
@@ -23,9 +25,24 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   void initState() {
     super.initState();
-    // Load profile - for now use 'current-user' as default
-    final userId = widget.userId ?? 'current-user';
-    context.read<ProfileBloc>().add(LoadProfile(userId));
+    // Get current user ID from AuthBloc instead of hardcoded value
+    _loadUserProfile();
+  }
+
+  void _loadUserProfile() {
+    if (widget.userId != null) {
+      // If userId is provided, use it
+      context.read<ProfileBloc>().add(LoadProfile(widget.userId!));
+    } else {
+      // If no userId provided, get current user from AuthBloc
+      final authState = context.read<AuthBloc>().state;
+      if (authState is Authenticated) {
+        context.read<ProfileBloc>().add(LoadProfile(authState.user.id));
+      } else {
+        // User not authenticated, show error or redirect
+        // For now, we'll just show an empty state
+      }
+    }
   }
 
   void _showEditProfile() {
@@ -54,130 +71,169 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    return Scaffold(
-      body: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, state) {
-          if (state is ProfileLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, authState) {
+        // Reload profile when authentication state changes
+        if (authState is Authenticated && widget.userId == null) {
+          context.read<ProfileBloc>().add(LoadProfile(authState.user.id));
+        } else if (authState is Unauthenticated) {
+          // Handle unauthenticated state - maybe navigate to login
+        }
+      },
+      child: Scaffold(
+        body: BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (context, state) {
+            // Check if we need to load profile when auth state is ready
+            if (state is ProfileInitial && widget.userId == null) {
+              final authState = context.read<AuthBloc>().state;
+              if (authState is Authenticated) {
+                // Delay the profile load to avoid calling during build
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    context.read<ProfileBloc>().add(
+                      LoadProfile(authState.user.id),
+                    );
+                  }
+                });
+              } else {
+                // User not authenticated, show message
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person_outline, size: 64),
+                      SizedBox(height: 16),
+                      Text('Please sign in to view your profile'),
+                    ],
+                  ),
+                );
+              }
+            }
 
-          if (state is ProfileError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading profile',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.message,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      final userId = widget.userId ?? 'current-user';
-                      context.read<ProfileBloc>().add(LoadProfile(userId));
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
+            if (state is ProfileLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (state is ProfileLoaded || state is ProfileUpdating) {
-            final user = state is ProfileLoaded
-                ? state.user
-                : (state as ProfileUpdating).user;
-            final events = state is ProfileLoaded
-                ? state.userEvents
-                : <Event>[];
-            final isEventsLoading =
-                state is ProfileLoaded && state.isEventsLoading;
-            final isUpdating = state is ProfileUpdating;
-
-            return CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: 120,
-                  pinned: true,
-                  flexibleSpace: FlexibleSpaceBar(
-                    title: Text(
-                      user.profileName,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                      ),
+            if (state is ProfileError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.error,
                     ),
-                    background: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Theme.of(context).colorScheme.primary,
-                            Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.8),
-                          ],
-                        ),
-                      ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading profile',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                  actions: [
-                    if (widget.userId ==
-                        null) // Only show edit for current user
-                      IconButton(
-                        onPressed: isUpdating ? null : _showEditProfile,
-                        icon: Icon(
-                          Icons.edit,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        final userId = widget.userId ?? 'current-user';
+                        context.read<ProfileBloc>().add(LoadProfile(userId));
+                      },
+                      child: const Text('Retry'),
+                    ),
                   ],
                 ),
-                SliverToBoxAdapter(
-                  child: ProfileHeader(user: user, isUpdating: isUpdating),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.event,
-                          color: Theme.of(context).colorScheme.primary,
+              );
+            }
+
+            if (state is ProfileLoaded || state is ProfileUpdating) {
+              final user = state is ProfileLoaded
+                  ? state.user
+                  : (state as ProfileUpdating).user;
+              final events = state is ProfileLoaded
+                  ? state.userEvents
+                  : <Event>[];
+              final isEventsLoading =
+                  state is ProfileLoaded && state.isEventsLoading;
+              final isUpdating = state is ProfileUpdating;
+
+              return CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    expandedHeight: 120,
+                    pinned: true,
+                    flexibleSpace: FlexibleSpaceBar(
+                      title: Text(
+                        user.profileName,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Created Events',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
+                      ),
+                      background: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Theme.of(context).colorScheme.primary,
+                              Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.8),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
+                    ),
+                    actions: [
+                      if (widget.userId ==
+                          null) // Only show edit for current user
+                        IconButton(
+                          onPressed: isUpdating ? null : _showEditProfile,
+                          icon: Icon(
+                            Icons.edit,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                    ],
+                  ),
+                  SliverToBoxAdapter(
+                    child: ProfileHeader(user: user, isUpdating: isUpdating),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.event,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Created Events',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                ProfileEventsList(events: events, isLoading: isEventsLoading),
-              ],
-            );
-          }
+                  ProfileEventsList(events: events, isLoading: isEventsLoading),
+                ],
+              );
+            }
 
-          return const Center(child: Text('Something went wrong'));
-        },
+            return const Center(child: Text('Something went wrong'));
+          },
+        ),
       ),
     );
   }

@@ -25,7 +25,9 @@ class FirebaseSocialRemoteDataSource implements SocialRemoteDataSource {
       }
 
       final data = doc.data()!;
-      return UserModel.fromJson({'id': doc.id, ...data});
+      // Convert Firestore Timestamp to DateTime string
+      final jsonData = _convertFirestoreData({'id': doc.id, ...data});
+      return UserModel.fromJson(jsonData);
     } on FirebaseException catch (e) {
       throw ServerException(
         message: 'Failed to get user profile: ${e.message}',
@@ -86,7 +88,11 @@ class FirebaseSocialRemoteDataSource implements SocialRemoteDataSource {
           .get();
 
       return snapshot.docs
-          .map((doc) => UserModel.fromJson({'id': doc.id, ...doc.data()}))
+          .map(
+            (doc) => UserModel.fromJson(
+              _convertFirestoreData({'id': doc.id, ...doc.data()}),
+            ),
+          )
           .toList();
     } on FirebaseException catch (e) {
       throw ServerException(message: 'Failed to search users: ${e.message}');
@@ -223,7 +229,11 @@ class FirebaseSocialRemoteDataSource implements SocialRemoteDataSource {
             .get();
 
         final batchFriends = friendsQuery.docs
-            .map((doc) => UserModel.fromJson({'id': doc.id, ...doc.data()}))
+            .map(
+              (doc) => UserModel.fromJson(
+                _convertFirestoreData({'id': doc.id, ...doc.data()}),
+              ),
+            )
             .toList();
 
         friends.addAll(batchFriends);
@@ -236,5 +246,23 @@ class FirebaseSocialRemoteDataSource implements SocialRemoteDataSource {
       if (e is NotFoundException) rethrow;
       throw ServerException(message: 'An unexpected error occurred: $e');
     }
+  }
+
+  /// Convert Firestore data types to JSON-compatible types
+  Map<String, dynamic> _convertFirestoreData(Map<String, dynamic> data) {
+    final converted = <String, dynamic>{};
+
+    for (final entry in data.entries) {
+      if (entry.value is Timestamp) {
+        // Convert Firestore Timestamp to ISO 8601 string
+        converted[entry.key] = (entry.value as Timestamp)
+            .toDate()
+            .toIso8601String();
+      } else {
+        converted[entry.key] = entry.value;
+      }
+    }
+
+    return converted;
   }
 }
