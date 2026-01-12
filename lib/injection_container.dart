@@ -1,9 +1,12 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'core/network/network_info.dart';
 import 'data/datasources/remote/auth_remote_datasource.dart';
 import 'data/datasources/remote/fake_auth_remote_datasource.dart';
+import 'data/datasources/remote/firebase_auth_remote_datasource.dart';
 import 'data/datasources/remote/event_remote_datasource.dart';
 import 'data/datasources/remote/fake_event_remote_datasource.dart';
 import 'data/datasources/remote/fake_search_remote_datasource.dart';
@@ -19,7 +22,9 @@ import 'domain/repositories/event_repository.dart';
 import 'domain/repositories/search_repository.dart';
 import 'domain/repositories/social_repository.dart';
 import 'domain/usecases/auth/get_current_user_usecase.dart';
+import 'domain/usecases/auth/reset_password_usecase.dart';
 import 'domain/usecases/auth/sign_in_usecase.dart';
+import 'domain/usecases/auth/sign_in_with_google_usecase.dart';
 import 'domain/usecases/auth/sign_out_usecase.dart';
 import 'domain/usecases/auth/sign_up_usecase.dart';
 import 'domain/usecases/events/create_event_usecase.dart';
@@ -41,9 +46,21 @@ import 'presentation/bloc/search/search_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
+// Set to true to use Firebase, false to use fake data sources
+const bool kUseFirebaseAuth = false; // Set to true to test with real Firebase
+
 Future<void> configureDependencies() async {
+  // External Dependencies
   if (!getIt.isRegistered<Connectivity>()) {
     getIt.registerLazySingleton<Connectivity>(Connectivity.new);
+  }
+
+  if (!getIt.isRegistered<FirebaseAuth>()) {
+    getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+  }
+
+  if (!getIt.isRegistered<GoogleSignIn>()) {
+    getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn.instance);
   }
 
   if (!getIt.isRegistered<NetworkInfo>()) {
@@ -54,7 +71,12 @@ Future<void> configureDependencies() async {
 
   if (!getIt.isRegistered<AuthRemoteDataSource>()) {
     getIt.registerLazySingleton<AuthRemoteDataSource>(
-      FakeAuthRemoteDataSource.new,
+      () => kUseFirebaseAuth
+          ? FirebaseAuthRemoteDataSourceImpl(
+              firebaseAuth: getIt.get<FirebaseAuth>(),
+              googleSignIn: getIt.get<GoogleSignIn>(),
+            )
+          : FakeAuthRemoteDataSource(),
     );
   }
 
@@ -108,6 +130,18 @@ Future<void> configureDependencies() async {
     );
   }
 
+  if (!getIt.isRegistered<SignInWithGoogleUseCase>()) {
+    getIt.registerLazySingleton<SignInWithGoogleUseCase>(
+      () => SignInWithGoogleUseCase(getIt()),
+    );
+  }
+
+  if (!getIt.isRegistered<ResetPasswordUseCase>()) {
+    getIt.registerLazySingleton<ResetPasswordUseCase>(
+      () => ResetPasswordUseCase(getIt()),
+    );
+  }
+
   if (!getIt.isRegistered<CreateEventUseCase>()) {
     getIt.registerLazySingleton<CreateEventUseCase>(
       () => CreateEventUseCase(getIt()),
@@ -155,6 +189,8 @@ Future<void> configureDependencies() async {
         signUpUseCase: getIt(),
         signOutUseCase: getIt(),
         getCurrentUserUseCase: getIt(),
+        signInWithGoogleUseCase: getIt(),
+        resetPasswordUseCase: getIt(),
       ),
     );
   }

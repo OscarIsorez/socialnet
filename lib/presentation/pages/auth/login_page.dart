@@ -119,6 +119,63 @@ class _LoginPageState extends State<LoginPage> {
                       );
                     },
                   ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'ou',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final isLoading = state is AuthLoading;
+                      return OutlinedButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                context.read<AuthBloc>().add(
+                                  const SignInWithGoogleRequested(),
+                                );
+                              },
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.login),
+                        label: const Text('Continuer avec Google'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      _showResetPasswordDialog(context);
+                    },
+                    child: const Text('Mot de passe oublié ?'),
+                  ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => Navigator.pushReplacementNamed(
@@ -132,6 +189,75 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showResetPasswordDialog(BuildContext context) {
+    final emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Réinitialiser le mot de passe'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Entrez votre adresse email pour recevoir un lien de réinitialisation.',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          BlocBuilder<AuthBloc, AuthState>(
+            builder: (context, state) {
+              if (state is PasswordResetSent) {
+                Future.microtask(() {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Email de réinitialisation envoyé !'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                });
+              }
+
+              final isLoading = state is AuthLoading;
+              return ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        if (emailController.text.isNotEmpty) {
+                          context.read<AuthBloc>().add(
+                            ResetPasswordRequested(email: emailController.text),
+                          );
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Envoyer'),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

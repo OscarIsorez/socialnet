@@ -154,7 +154,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(
                                   context,
-                                ).colorScheme.outline.withOpacity(0.3),
+                                ).colorScheme.outline.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

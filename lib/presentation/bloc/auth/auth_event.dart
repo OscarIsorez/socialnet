@@ -39,3 +39,16 @@ class SignOutRequested extends AuthEvent {
 class CheckAuthStatus extends AuthEvent {
   const CheckAuthStatus();
 }
+
+class SignInWithGoogleRequested extends AuthEvent {
+  const SignInWithGoogleRequested();
+}
+
+class ResetPasswordRequested extends AuthEvent {
+  const ResetPasswordRequested({required this.email});
+
+  final String email;
+
+  @override
+  List<Object?> get props => [email];
+}

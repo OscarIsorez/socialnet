@@ -87,15 +87,53 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   @override
   Future<UserModel?> getCurrentUser() async {
     await Future<void>.delayed(const Duration(milliseconds: 200));
-    // final key = _currentUserEmail;
+    final key = _currentUserEmail;
 
-    // TO REMOVE IN PROD
-    final key = "demo@r.com";
-
+    // TO REMOVE IN PROD - Demo user for testing
     if (key == null) {
-      return null;
+      const demoKey = "demo@r.com";
+      return _users[demoKey]?.user;
     }
     return _users[key]?.user;
+  }
+
+  @override
+  Future<UserModel> signInWithGoogle() async {
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    // Simulate Google sign in with a demo user
+    final googleUser = UserModel(
+      id: _uuid.v4(),
+      email: 'google.user@gmail.com',
+      profileName: 'Google User',
+      photoUrl: 'https://lh3.googleusercontent.com/a/default-user=s96-c',
+      isPublic: true,
+      interests: const ['technology', 'music'],
+      friendIds: const [],
+      createdAt: DateTime.now(),
+    );
+
+    _users[googleUser.email.toLowerCase()] = _FakeUserRecord(
+      user: googleUser,
+      password: 'google-auth', // Not used for Google auth
+    );
+
+    _currentUserEmail = googleUser.email.toLowerCase();
+    return googleUser;
+  }
+
+  @override
+  Future<void> resetPassword(String email) async {
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+
+    if (!_users.containsKey(email.toLowerCase())) {
+      throw const AuthException(
+        message: 'Aucun compte trouvé avec cette adresse email.',
+      );
+    }
+
+    // In a real implementation, this would send an email
+    // For fake implementation, we just simulate success
   }
 }
 

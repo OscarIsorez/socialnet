@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'core/theme/app_theme.dart';
+import 'firebase_options.dart';
 import 'injection_container.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/event/event_bloc.dart';
@@ -12,7 +14,13 @@ import 'presentation/routes/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Configure dependencies
   await configureDependencies();
+
   runApp(const RedemtonApp());
 }
 

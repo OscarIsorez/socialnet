@@ -82,4 +82,36 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(message: error.message));
     }
   }
+
+  @override
+  Future<Either<Failure, User>> signInWithGoogle() async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+
+    try {
+      final user = await _remoteDataSource.signInWithGoogle();
+      return Right(user);
+    } on AuthException catch (error) {
+      return Left(AuthFailure(message: error.message));
+    } on ServerException catch (error) {
+      return Left(ServerFailure(message: error.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetPassword(String email) async {
+    if (!await _networkInfo.isConnected) {
+      return const Left(NetworkFailure());
+    }
+
+    try {
+      await _remoteDataSource.resetPassword(email);
+      return const Right(null);
+    } on AuthException catch (error) {
+      return Left(AuthFailure(message: error.message));
+    } on ServerException catch (error) {
+      return Left(ServerFailure(message: error.message));
+    }
+  }
 }

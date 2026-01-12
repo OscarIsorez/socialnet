@@ -3,7 +3,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../domain/entities/location_point.dart';
-import '../../widgets/map/map_view.dart';
 
 class LocationSelectionOverlay extends StatefulWidget {
   const LocationSelectionOverlay({
@@ -28,7 +27,6 @@ class _LocationSelectionOverlayState extends State<LocationSelectionOverlay>
   final TextEditingController _searchController = TextEditingController();
 
   LocationPoint? _selectedLocation;
-  bool _isSearching = false;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
 
@@ -85,7 +83,9 @@ class _LocationSelectionOverlayState extends State<LocationSelectionOverlay>
               scale: _scaleAnimation,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 3),
                 ),
@@ -141,7 +141,7 @@ class _LocationSelectionOverlayState extends State<LocationSelectionOverlay>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -163,7 +163,6 @@ class _LocationSelectionOverlayState extends State<LocationSelectionOverlay>
                       ),
                       onSubmitted: (value) {
                         // TODO: Implement location search
-                        setState(() => _isSearching = false);
                       },
                     ),
                   ),

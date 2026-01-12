@@ -8,4 +8,8 @@ abstract class AuthRemoteDataSource {
   Future<void> signOut();
 
   Future<UserModel?> getCurrentUser();
+
+  Future<UserModel> signInWithGoogle();
+
+  Future<void> resetPassword(String email);
 }
