@@ -12,7 +12,12 @@
           "package_name": "com.example.socialnet"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "533741875324-e580d6eq48tb9ptsrgepstlqk22gt5vt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDV1xW2uHcaMgUCsNrrCP0UgB_q5neFg6A"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "533741875324-e580d6eq48tb9ptsrgepstlqk22gt5vt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "533741875324-0iacpsif6tq8tb89rcsg5hck1b2hn03q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.socialnet"
+              }
+            }
+          ]
         }
       }
     }
