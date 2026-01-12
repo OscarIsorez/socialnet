@@ -161,7 +161,11 @@ class _LoginPageState extends State<LoginPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.login),
+                            : Image.asset(
+                                'assets/google-logo.png',
+                                width: 18,
+                                height: 18,
+                              ),
                         label: const Text('Continuer avec Google'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
