@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "533741875324",
+    "project_id": "mapster-4b696",
+    "storage_bucket": "mapster-4b696.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:533741875324:android:b01e98d21196a429b0d9f9",
+        "android_client_info": {
+          "package_name": "com.example.socialnet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDV1xW2uHcaMgUCsNrrCP0UgB_q5neFg6A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
