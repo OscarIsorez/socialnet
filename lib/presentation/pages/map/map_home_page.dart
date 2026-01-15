@@ -29,8 +29,8 @@ class MapHomePage extends StatefulWidget {
 class _MapHomePageState extends State<MapHomePage>
     with AutomaticKeepAliveClientMixin {
   static const LocationPoint _defaultCenter = LocationPoint(
-    latitude: 46.58,
-    longitude: 0.34,
+    latitude: 48.8566,
+    longitude: 2.3522,
   );
   static const double _defaultRadiusKm = 5;
 
