@@ -19,32 +19,78 @@ class EventModel extends Event {
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
-    return EventModel(
-      id: json['id'] as String,
-      creatorId: json['creatorId'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      category: EventCategory.values.firstWhere(
-        (value) => value.name == json['category'],
-      ),
-      subCategory: EventSubCategory.values.firstWhere(
-        (value) => value.name == json['subCategory'],
-      ),
-      location: LocationPoint(
-        latitude: (json['location']['lat'] as num).toDouble(),
-        longitude: (json['location']['lng'] as num).toDouble(),
-      ),
-      photoUrl: json['photoUrl'] as String?,
-      startTime: json['startTime'] != null
-          ? DateTime.parse(json['startTime'] as String)
-          : null,
-      endTime: json['endTime'] != null
-          ? DateTime.parse(json['endTime'] as String)
-          : null,
-      isActive: json['isActive'] as bool? ?? true,
-      verificationCount: json['verificationCount'] as int? ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-    );
+    // Helper function to safely parse location coordinates
+    LocationPoint parseLocation(Map<String, dynamic>? locationMap) {
+      if (locationMap == null) {
+        throw FormatException('Location data is missing');
+      }
+
+      // Support both formats: lat/lng and latitude/longitude
+      final lat = locationMap['lat'] ?? locationMap['latitude'];
+      final lng = locationMap['lng'] ?? locationMap['longitude'];
+
+      if (lat == null || lng == null) {
+        throw FormatException(
+          'Location coordinates are missing or null. Available keys: ${locationMap.keys.toList()}',
+        );
+      }
+
+      return LocationPoint(
+        latitude: (lat as num).toDouble(),
+        longitude: (lng as num).toDouble(),
+      );
+    }
+
+    // Helper function to safely parse enum values
+    T parseEnum<T extends Enum>(
+      List<T> values,
+      String? jsonValue,
+      String fieldName,
+    ) {
+      if (jsonValue == null) {
+        throw FormatException('$fieldName is missing');
+      }
+
+      try {
+        return values.firstWhere((value) => value.name == jsonValue);
+      } catch (e) {
+        throw FormatException('Invalid $fieldName value: $jsonValue');
+      }
+    }
+
+    try {
+      return EventModel(
+        id: json['id'] as String? ?? '',
+        creatorId: json['creatorId'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        description: json['description'] as String? ?? '',
+        category: parseEnum(
+          EventCategory.values,
+          json['category'] as String?,
+          'category',
+        ),
+        subCategory: parseEnum(
+          EventSubCategory.values,
+          json['subCategory'] as String?,
+          'subCategory',
+        ),
+        location: parseLocation(json['location'] as Map<String, dynamic>?),
+        photoUrl: json['photoUrl'] as String?,
+        startTime: json['startTime'] != null
+            ? DateTime.parse(json['startTime'] as String)
+            : null,
+        endTime: json['endTime'] != null
+            ? DateTime.parse(json['endTime'] as String)
+            : null,
+        isActive: json['isActive'] as bool? ?? true,
+        verificationCount: json['verificationCount'] as int? ?? 0,
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : DateTime.now(),
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse EventModel: $e');
+    }
   }
 
   factory EventModel.fromEntity(Event event) {

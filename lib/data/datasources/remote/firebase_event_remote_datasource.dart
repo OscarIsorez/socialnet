@@ -57,8 +57,11 @@ class FirebaseEventRemoteDataSource implements EventRemoteDataSource {
       Query query = _firestore
           .collection(_collectionName)
           .where('isActive', isEqualTo: true)
-          .where('location.lat', isGreaterThanOrEqualTo: boundingBox.minLat)
-          .where('location.lat', isLessThanOrEqualTo: boundingBox.maxLat);
+          .where(
+            'location.latitude',
+            isGreaterThanOrEqualTo: boundingBox.minLat,
+          )
+          .where('location.latitude', isLessThanOrEqualTo: boundingBox.maxLat);
 
       // Add category filter if provided
       if (category != null) {
@@ -83,8 +86,17 @@ class FirebaseEventRemoteDataSource implements EventRemoteDataSource {
             }
           }
         } catch (e) {
-          // Skip malformed documents but log for debugging
+          // Skip malformed documents but log detailed info for debugging
+          final data = doc.data() as Map<String, dynamic>?;
           print('Failed to parse event document ${doc.id}: $e');
+          print('Document data: $data');
+
+          // Log specific field values for debugging
+          if (data != null) {
+            print('Location: ${data['location']}');
+            print('Category: ${data['category']}');
+            print('SubCategory: ${data['subCategory']}');
+          }
           continue;
         }
       }
@@ -202,8 +214,17 @@ class FirebaseEventRemoteDataSource implements EventRemoteDataSource {
           final event = EventModel.fromJson(data);
           events.add(event);
         } catch (e) {
-          // Skip malformed documents but continue processing others
+          // Skip malformed documents but log detailed info for debugging
+          final data = doc.data();
           print('Failed to parse event document ${doc.id}: $e');
+          print('Document data: $data');
+
+          // Log specific field values for debugging
+          if (data.isNotEmpty) {
+            print('Location: ${data['location']}');
+            print('Category: ${data['category']}');
+            print('SubCategory: ${data['subCategory']}');
+          }
           continue;
         }
       }
