@@ -49,7 +49,9 @@ class EventDetailSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   event.title,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
