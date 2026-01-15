@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get_it/get_it.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -11,6 +10,7 @@ import 'data/datasources/remote/fake_auth_remote_datasource.dart';
 import 'data/datasources/remote/firebase_auth_remote_datasource.dart';
 import 'data/datasources/remote/event_remote_datasource.dart';
 import 'data/datasources/remote/fake_event_remote_datasource.dart';
+import 'data/datasources/remote/firebase_event_remote_datasource.dart';
 import 'data/datasources/remote/fake_search_remote_datasource.dart';
 import 'data/datasources/remote/fake_social_remote_datasource.dart';
 import 'data/datasources/remote/firebase_social_remote_datasource.dart';
@@ -53,6 +53,7 @@ final GetIt getIt = GetIt.instance;
 const bool kUseFirebaseAuth = true; // Set to true to test with real Firebase
 const bool kUseFirebaseSocial =
     true; // Set to true to use Firebase for profiles
+const bool kUseFirebaseEvents = true; // Set to true to use Firebase for events
 
 Future<void> configureDependencies() async {
   // External Dependencies
@@ -99,7 +100,11 @@ Future<void> configureDependencies() async {
 
   if (!getIt.isRegistered<EventRemoteDataSource>()) {
     getIt.registerLazySingleton<EventRemoteDataSource>(
-      FakeEventRemoteDataSource.new,
+      () => kUseFirebaseEvents
+          ? FirebaseEventRemoteDataSource(
+              firestore: getIt.get<FirebaseFirestore>(),
+            )
+          : FakeEventRemoteDataSource(),
     );
   }
 
