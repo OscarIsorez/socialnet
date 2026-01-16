@@ -1,8 +1,10 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../../../domain/entities/event.dart';
 import '../../../domain/entities/location_point.dart';
@@ -32,24 +34,36 @@ class _MapHomePageState extends State<MapHomePage>
     latitude: 48.8566,
     longitude: 2.3522,
   );
-  static const double _defaultRadiusKm = 5;
 
   final DateFormat _dateFormat = DateFormat('EEE d MMM HH:mm');
   final MapController _mapController = MapController();
 
   EventCategory? _selectedCategory;
+  LocationPoint? _currentCenter;
+  Timer? _mapMoveTimer;
+  bool _isMapMoving = false;
 
   @override
   void initState() {
     super.initState();
-    _loadEvents();
+    _loadEventsFromLocation();
   }
 
-  void _loadEvents({EventCategory? category}) {
+  @override
+  void dispose() {
+    _mapMoveTimer?.cancel();
+    super.dispose();
+  }
+
+  void _loadEventsFromLocation({EventCategory? category}) {
+    context.read<MapBloc>().add(MapLocationRequested(category: category));
+  }
+
+  void _loadEventsForCenter(LocationPoint center, {EventCategory? category}) {
     context.read<MapBloc>().add(
-      MapEventsRequested(
-        center: _defaultCenter,
-        radiusKm: _defaultRadiusKm,
+      MapCenterChanged(
+        center: center,
+        radiusKm: _calculateRadiusFromZoom(),
         category: category,
       ),
     );
@@ -57,7 +71,42 @@ class _MapHomePageState extends State<MapHomePage>
 
   void _onCategorySelected(EventCategory? category) {
     setState(() => _selectedCategory = category);
-    _loadEvents(category: category);
+    if (_currentCenter != null) {
+      _loadEventsForCenter(_currentCenter!, category: category);
+    } else {
+      _loadEventsFromLocation(category: category);
+    }
+  }
+
+  double _calculateRadiusFromZoom() {
+    final zoom = _mapController.camera.zoom;
+    // Approximate radius calculation based on zoom level
+    // Higher zoom = smaller radius, lower zoom = larger radius
+    return max(1.0, min(50.0, 50.0 / pow(2, zoom - 10)));
+  }
+
+  void _onMapPositionChanged(MapCamera camera, bool hasGesture) {
+    if (!hasGesture) return;
+
+    setState(() => _isMapMoving = true);
+
+    // Cancel previous timer
+    _mapMoveTimer?.cancel();
+
+    // Set new timer to load events after map stops moving
+    _mapMoveTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() => _isMapMoving = false);
+
+        final center = LocationPoint(
+          latitude: camera.center.latitude,
+          longitude: camera.center.longitude,
+        );
+
+        _currentCenter = center;
+        _loadEventsForCenter(center, category: _selectedCategory);
+      }
+    });
   }
 
   void _onMarkerTapped(Event event) {
@@ -85,12 +134,13 @@ class _MapHomePageState extends State<MapHomePage>
   }
 
   void _startEventCreation() {
+    final center = _currentCenter ?? _defaultCenter;
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
         pageBuilder: (context, animation, secondaryAnimation) {
           return LocationSelectionOverlay(
-            initialCenter: _defaultCenter,
+            initialCenter: center,
             onLocationSelected: _showEventCreationDialog,
             onCancel: () => Navigator.of(context).pop(),
           );
@@ -114,8 +164,15 @@ class _MapHomePageState extends State<MapHomePage>
             return EventCreationDialog(
               selectedLocation: selectedLocation,
               onEventCreated: () {
-                // Refresh events after creation
-                _loadEvents(category: _selectedCategory);
+                // Refresh events for current area after creation
+                if (_currentCenter != null) {
+                  _loadEventsForCenter(
+                    _currentCenter!,
+                    category: _selectedCategory,
+                  );
+                } else {
+                  _loadEventsFromLocation(category: _selectedCategory);
+                }
               },
             );
           },
@@ -142,14 +199,26 @@ class _MapHomePageState extends State<MapHomePage>
                 ..hideCurrentSnackBar()
                 ..showSnackBar(SnackBar(content: Text(state.message!)));
             }
+
+            // Track current center from state
+            if (state.center != null) {
+              _currentCenter = state.center;
+            }
           },
         ),
         BlocListener<EventBloc, EventState>(
           listener: (context, state) {
             if (state.status == EventStatus.success &&
                 state.operation == EventOperation.create) {
-              // Refresh events after successful creation
-              _loadEvents(category: _selectedCategory);
+              // Refresh events for current area after successful creation
+              if (_currentCenter != null) {
+                _loadEventsForCenter(
+                  _currentCenter!,
+                  category: _selectedCategory,
+                );
+              } else {
+                _loadEventsFromLocation(category: _selectedCategory);
+              }
             }
           },
         ),
@@ -173,11 +242,64 @@ class _MapHomePageState extends State<MapHomePage>
                   Expanded(
                     child: showInPlaceLoader
                         ? const CenteredProgress()
-                        : MapView(
-                            events: state.events,
-                            center: _defaultCenter,
-                            mapController: _mapController,
-                            onMarkerTapped: _onMarkerTapped,
+                        : Stack(
+                            children: [
+                              MapView(
+                                events: state.events,
+                                center:
+                                    state.center ??
+                                    _currentCenter ??
+                                    _defaultCenter,
+                                mapController: _mapController,
+                                onMarkerTapped: _onMarkerTapped,
+                                onMapPositionChanged: _onMapPositionChanged,
+                              ),
+                              if (_isMapMoving)
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onPrimary,
+                                                ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Recherche...',
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                   ),
                 ],
@@ -194,13 +316,7 @@ class _MapHomePageState extends State<MapHomePage>
                       FloatingActionButton.small(
                         heroTag: 'recenterMap',
                         onPressed: () {
-                          _mapController.move(
-                            LatLng(
-                              _defaultCenter.latitude,
-                              _defaultCenter.longitude,
-                            ),
-                            13.0,
-                          );
+                          _loadEventsFromLocation(category: _selectedCategory);
                         },
                         child: const Icon(Icons.my_location),
                       ),
@@ -232,7 +348,16 @@ class _MapHomePageState extends State<MapHomePage>
           IconButton(
             tooltip: 'Recharger',
             icon: const Icon(Icons.refresh),
-            onPressed: () => _loadEvents(category: _selectedCategory),
+            onPressed: () {
+              if (_currentCenter != null) {
+                _loadEventsForCenter(
+                  _currentCenter!,
+                  category: _selectedCategory,
+                );
+              } else {
+                _loadEventsFromLocation(category: _selectedCategory);
+              }
+            },
           ),
         ],
       ),

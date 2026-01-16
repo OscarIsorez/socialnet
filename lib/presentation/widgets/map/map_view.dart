@@ -13,12 +13,14 @@ class MapView extends StatelessWidget {
     required this.center,
     required this.mapController,
     required this.onMarkerTapped,
+    this.onMapPositionChanged,
   });
 
   final List<Event> events;
   final LocationPoint center;
   final MapController mapController;
   final Function(Event) onMarkerTapped;
+  final Function(MapCamera, bool)? onMapPositionChanged;
 
   Color _getCategoryColor(EventCategory category) {
     switch (category) {
@@ -44,6 +46,7 @@ class MapView extends StatelessWidget {
         initialZoom: 13.0,
         minZoom: 3.0,
         maxZoom: 18.0,
+        onPositionChanged: onMapPositionChanged,
       ),
       children: [
         TileLayer(
