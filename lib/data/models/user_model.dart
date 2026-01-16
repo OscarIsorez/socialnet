@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../domain/entities/user.dart';
 
 class UserModel extends User {
@@ -23,7 +25,7 @@ class UserModel extends User {
           .cast<String>(),
       friendIds: (json['friendIds'] as List<dynamic>? ?? const [])
           .cast<String>(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: _parseDateTime(json['createdAt']),
     );
   }
 
@@ -74,5 +76,18 @@ class UserModel extends User {
       friendIds: friendIds ?? List<String>.from(this.friendIds),
       createdAt: createdAt ?? this.createdAt,
     );
+  }
+
+  /// Helper method to parse DateTime from either Firestore Timestamp or String
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is String) {
+      return DateTime.parse(value);
+    } else if (value is DateTime) {
+      return value;
+    } else {
+      throw ArgumentError('Invalid DateTime format: $value');
+    }
   }
 }

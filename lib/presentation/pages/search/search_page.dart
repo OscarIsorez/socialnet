@@ -38,6 +38,11 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _onSearchChanged() {
+    final query = _searchController.text;
+
+    // Immediately update the query in the bloc state without triggering search
+    context.read<SearchBloc>().add(UpdateQueryRequested(query));
+
     _debounceTimer?.cancel();
 
     final bool previousKeepAlive = wantKeepAlive;
@@ -50,14 +55,14 @@ class _SearchPageState extends State<SearchPage>
       updateKeepAlive();
     }
 
-    if (_searchController.text.isEmpty) {
+    if (query.isEmpty) {
       setState(() => _isSearching = false);
       context.read<SearchBloc>().add(const ClearSearchResultsRequested());
       return;
     }
 
     // Debounce search to avoid excessive API calls
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
       _performSearch();
     });
   }

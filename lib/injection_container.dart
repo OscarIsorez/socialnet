@@ -12,6 +12,7 @@ import 'data/datasources/remote/event_remote_datasource.dart';
 import 'data/datasources/remote/fake_event_remote_datasource.dart';
 import 'data/datasources/remote/firebase_event_remote_datasource.dart';
 import 'data/datasources/remote/fake_search_remote_datasource.dart';
+import 'data/datasources/remote/firebase_search_remote_datasource.dart';
 import 'data/datasources/remote/fake_social_remote_datasource.dart';
 import 'data/datasources/remote/firebase_social_remote_datasource.dart';
 import 'data/datasources/remote/search_remote_datasource.dart';
@@ -54,6 +55,7 @@ const bool kUseFirebaseAuth = true; // Set to true to test with real Firebase
 const bool kUseFirebaseSocial =
     true; // Set to true to use Firebase for profiles
 const bool kUseFirebaseEvents = true; // Set to true to use Firebase for events
+const bool kUseFirebaseSearch = true; // Set to true to use Firebase for search
 
 Future<void> configureDependencies() async {
   // External Dependencies
@@ -251,7 +253,11 @@ Future<void> configureDependencies() async {
   // Search
   if (!getIt.isRegistered<SearchRemoteDataSource>()) {
     getIt.registerLazySingleton<SearchRemoteDataSource>(
-      FakeSearchRemoteDataSource.new,
+      () => kUseFirebaseSearch
+          ? FirebaseSearchRemoteDataSource(
+              firestore: getIt.get<FirebaseFirestore>(),
+            )
+          : FakeSearchRemoteDataSource(),
     );
   }
 

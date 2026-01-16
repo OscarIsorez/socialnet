@@ -32,6 +32,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<UpdateFiltersRequested>(_onUpdateFiltersRequested);
     on<ClearSearchRequested>(_onClearSearchRequested);
     on<ClearSearchResultsRequested>(_onClearSearchResultsRequested);
+    on<UpdateQueryRequested>(_onUpdateQueryRequested);
   }
 
   final SearchEventsUseCase _searchEventsUseCase;
@@ -49,7 +50,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         searchType: SearchType.events,
         query: event.query,
         clearMessage: true,
-        clearResults: true,
       ),
     );
 
@@ -84,7 +84,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         searchType: SearchType.users,
         query: event.query,
         clearMessage: true,
-        clearResults: true,
       ),
     );
 
@@ -182,6 +181,13 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     Emitter<SearchState> emit,
   ) {
     emit(state.copyWith(clearResults: true, clearMessage: true));
+  }
+
+  void _onUpdateQueryRequested(
+    UpdateQueryRequested event,
+    Emitter<SearchState> emit,
+  ) {
+    emit(state.copyWith(query: event.query, clearMessage: true));
   }
 
   String _mapFailureToMessage(Failure failure) {

@@ -68,3 +68,13 @@ class ClearSearchRequested extends SearchEvent {
 class ClearSearchResultsRequested extends SearchEvent {
   const ClearSearchResultsRequested();
 }
+
+/// Event to update search query without triggering search (for typing)
+class UpdateQueryRequested extends SearchEvent {
+  const UpdateQueryRequested(this.query);
+
+  final String query;
+
+  @override
+  List<Object?> get props => [query];
+}
