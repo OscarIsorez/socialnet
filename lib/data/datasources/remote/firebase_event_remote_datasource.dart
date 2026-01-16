@@ -250,8 +250,12 @@ class FirebaseEventRemoteDataSource implements EventRemoteDataSource {
     const kmPerDegreeLat = 111.0;
     final kmPerDegreeLng = kmPerDegreeLat * cos(center.latitude * pi / 180);
 
-    final deltaLat = radiusKm / kmPerDegreeLat;
-    final deltaLng = radiusKm / kmPerDegreeLng;
+    // Use a larger radius for the bounding box to ensure we don't miss events
+    // that are close to the edge of the exact radius
+    final expandedRadiusKm = radiusKm * 1.2; // 20% larger radius
+
+    final deltaLat = expandedRadiusKm / kmPerDegreeLat;
+    final deltaLng = expandedRadiusKm / kmPerDegreeLng;
 
     return _BoundingBox(
       minLat: center.latitude - deltaLat,
