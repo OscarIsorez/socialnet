@@ -63,11 +63,13 @@ class _SearchPageState extends State<SearchPage>
 
     // Debounce search to avoid excessive API calls
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _performSearch();
+      _performSearch(
+        dismissKeyboard: false,
+      ); // Keep keyboard visible for timer-based search
     });
   }
 
-  void _performSearch() {
+  void _performSearch({bool dismissKeyboard = true}) {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
 
@@ -79,7 +81,10 @@ class _SearchPageState extends State<SearchPage>
       updateKeepAlive();
     }
 
-    FocusScope.of(context).unfocus();
+    // Only dismiss keyboard for manual searches (e.g., when user presses enter)
+    if (dismissKeyboard) {
+      FocusScope.of(context).unfocus();
+    }
 
     // Search both events and users simultaneously
     context.read<SearchBloc>().add(
@@ -107,7 +112,9 @@ class _SearchPageState extends State<SearchPage>
 
       // Re-search if there was a query and filters changed
       if (_searchController.text.isNotEmpty) {
-        _performSearch();
+        _performSearch(
+          dismissKeyboard: false,
+        ); // Keep keyboard when re-searching due to filter changes
       } else if (currentFilters?.hasFilters == true) {
         // If no query but filters were applied, trigger filter search
         if (mounted) {
@@ -144,6 +151,9 @@ class _SearchPageState extends State<SearchPage>
             Expanded(
               child: TextField(
                 controller: _searchController,
+                onSubmitted: (_) => _performSearch(
+                  dismissKeyboard: true,
+                ), // Dismiss keyboard on Enter
                 decoration: InputDecoration(
                   hintText: 'Search events and users...',
                   border: InputBorder.none,
@@ -210,7 +220,9 @@ class _SearchPageState extends State<SearchPage>
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _performSearch,
+                  onPressed: () => _performSearch(
+                    dismissKeyboard: true,
+                  ), // Dismiss keyboard on retry button
                   child: const Text('Try Again'),
                 ),
               ],
