@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/message.dart';
-import '../../../domain/entities/user.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
     super.key,
     required this.message,
     required this.isCurrentUser,
-    this.sender,
+    this.senderName,
     this.showSenderName = false,
   });
 
   final Message message;
   final bool isCurrentUser;
-  final User? sender;
+  final String? senderName;
   final bool showSenderName;
 
   @override
@@ -31,7 +30,7 @@ class MessageBubble extends StatelessWidget {
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
-            if (showSenderName && sender != null)
+            if (showSenderName && senderName != null)
               Padding(
                 padding: EdgeInsets.only(
                   left: isCurrentUser ? 0 : 12,
@@ -39,7 +38,7 @@ class MessageBubble extends StatelessWidget {
                   bottom: 4,
                 ),
                 child: Text(
-                  sender!.profileName,
+                  senderName!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(
                       context,

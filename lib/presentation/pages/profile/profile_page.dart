@@ -7,6 +7,7 @@ import '../../bloc/auth/auth_state.dart';
 import '../../bloc/profile/profile_bloc.dart';
 import '../../bloc/profile/profile_event.dart';
 import '../../bloc/profile/profile_state.dart';
+import '../../routes/app_router.dart';
 import '../../widgets/profile/profile_header.dart';
 import '../../widgets/profile/profile_events_list.dart';
 import '../../widgets/profile/edit_profile_bottom_sheet.dart';
@@ -188,8 +189,26 @@ class _ProfilePageState extends State<ProfilePage>
                       ),
                     ),
                     actions: [
-                      if (widget.userId ==
-                          null) // Only show edit for current user
+                      if (widget.userId == null) ...[
+                        // Only show for current user
+                        IconButton(
+                          onPressed: () => Navigator.pushNamed(
+                            context,
+                            AppRouter.notifications,
+                          ),
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () =>
+                              Navigator.pushNamed(context, AppRouter.settings),
+                          icon: Icon(
+                            Icons.settings_outlined,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
                         IconButton(
                           onPressed: isUpdating ? null : _showEditProfile,
                           icon: Icon(
@@ -197,6 +216,7 @@ class _ProfilePageState extends State<ProfilePage>
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
+                      ],
                     ],
                   ),
                   SliverToBoxAdapter(

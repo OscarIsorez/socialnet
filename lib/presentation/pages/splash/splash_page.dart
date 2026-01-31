@@ -59,8 +59,8 @@ class _SplashPageState extends State<SplashPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).colorScheme.secondary,
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.onPrimary,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,

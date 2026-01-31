@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:socialnet/presentation/pages/search/search_page.dart';
 
 import '../../domain/entities/event.dart';
 import '../pages/auth/login_page.dart';
@@ -26,11 +27,13 @@ class AppRouter {
   static const String createEvent = '/create-event';
   static const String eventDetail = '/event-detail';
   static const String chat = '/chat';
+  static const String chatRoute = '/chat'; // Alias for consistency
   static const String notifications = '/notifications';
   static const String settings = '/settings';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String interests = '/interests';
+  static const String search = '/search';
 
   static Route<dynamic> generateRoute(RouteSettings routeSettings) {
     switch (routeSettings.name) {
@@ -46,17 +49,38 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const MainPage());
       case createEvent:
         return MaterialPageRoute(builder: (_) => const CreateEventPage());
+      case search:
+        return MaterialPageRoute(builder: (_) => const SearchPage());
       case eventDetail:
         final event = routeSettings.arguments;
         return MaterialPageRoute(
           builder: (_) => EventDetailPage(event: event is Event ? event : null),
         );
       case chat:
-        final userId = routeSettings.arguments;
-        return MaterialPageRoute(
-          builder: (_) =>
-              ChatPage(convId: userId is String ? userId : 'unknown'),
-        );
+        final args = routeSettings.arguments;
+        if (args is Map<String, dynamic>) {
+          // Handle conversation object arguments
+          if (args.containsKey('conversation')) {
+            return MaterialPageRoute(
+              builder: (_) => ChatPage(
+                conversation: args['conversation'],
+                currentUser: args['currentUser'],
+                participants: args['participants'] ?? [],
+              ),
+            );
+          }
+          // Handle ID-based arguments
+          else {
+            return MaterialPageRoute(
+              builder: (_) => ChatPage(
+                conversationId: args['conversationId'] as String?,
+                otherUserId: args['otherUserId'] as String?,
+              ),
+            );
+          }
+        } else {
+          return MaterialPageRoute(builder: (_) => const ChatPage());
+        }
       case notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
       case settings:

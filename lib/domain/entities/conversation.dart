@@ -14,6 +14,8 @@ class Conversation extends Equatable {
     required this.type,
     this.groupName,
     this.groupImageUrl,
+    this.groupDescription,
+    this.lastMessageId,
   });
 
   final String id;
@@ -24,8 +26,11 @@ class Conversation extends Equatable {
   final ConversationType type;
   final String? groupName;
   final String? groupImageUrl;
+  final String? groupDescription; // For group chats
+  final String? lastMessageId; // Reference to last message
 
   bool get isGroup => type == ConversationType.group;
+  bool get isIndividual => type == ConversationType.individual;
   int get memberCount => participantIds.length;
 
   Conversation copyWith({
@@ -37,6 +42,8 @@ class Conversation extends Equatable {
     ConversationType? type,
     String? groupName,
     String? groupImageUrl,
+    String? groupDescription,
+    String? lastMessageId,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -47,6 +54,8 @@ class Conversation extends Equatable {
       type: type ?? this.type,
       groupName: groupName ?? this.groupName,
       groupImageUrl: groupImageUrl ?? this.groupImageUrl,
+      groupDescription: groupDescription ?? this.groupDescription,
+      lastMessageId: lastMessageId ?? this.lastMessageId,
     );
   }
 
@@ -60,5 +69,7 @@ class Conversation extends Equatable {
     type,
     groupName,
     groupImageUrl,
+    groupDescription,
+    lastMessageId,
   ];
 }

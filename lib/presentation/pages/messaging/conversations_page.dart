@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:socialnet/presentation/bloc/auth/auth_state.dart';
 
 import '../../../domain/entities/conversation.dart';
-import '../../../domain/entities/message.dart';
 import '../../../domain/entities/user.dart';
+import '../../../domain/usecases/social/get_user_profile.dart';
+import '../../../injection_container.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/messaging/messaging_bloc.dart';
 import '../../routes/app_router.dart';
 import '../../widgets/messaging/conversation_tile.dart';
 import '../../widgets/messaging/create_conversation_sheet.dart';
@@ -17,159 +22,195 @@ class ConversationsPage extends StatefulWidget {
 
 class _ConversationsPageState extends State<ConversationsPage>
     with AutomaticKeepAliveClientMixin {
-  // Mock data - replace with actual data from your backend/BLoC
-  final List<Conversation> _conversations = [
-    Conversation(
-      id: 'user-1',
-      participantIds: ['current-user', 'alice-id'],
-      lastMessage: Message(
-        id: 'msg-1',
-        senderId: 'alice-id',
-        receiverId: 'current-user',
-        content: 'Hey! How are you doing?',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
-        type: MessageType.text,
-      ),
-      updatedAt: DateTime.now().subtract(const Duration(minutes: 30)),
-      unreadCount: 1,
-      type: ConversationType.individual,
-    ),
-    Conversation(
-      id: 'group-1',
-      participantIds: ['current-user', 'alice-id', 'bob-id', 'charlie-id'],
-      lastMessage: Message(
-        id: 'msg-2',
-        senderId: 'alice-id',
-        receiverId: 'group-1',
-        content: 'Check out this new Flutter update!',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-        type: MessageType.text,
-      ),
-      updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
-      unreadCount: 0,
-      type: ConversationType.group,
-      groupName: 'Flutter Developers',
-    ),
-    Conversation(
-      id: 'user-2',
-      participantIds: ['current-user', 'bob-id'],
-      lastMessage: Message(
-        id: 'msg-3',
-        senderId: 'bob-id',
-        receiverId: 'current-user',
-        content: 'Thanks for the help earlier',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        type: MessageType.text,
-      ),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      unreadCount: 0,
-      type: ConversationType.individual,
-    ),
-    Conversation(
-      id: 'group-2',
-      participantIds: ['current-user', 'charlie-id', 'dave-id', 'eve-id'],
-      lastMessage: Message(
-        id: 'msg-4',
-        senderId: 'charlie-id',
-        receiverId: 'group-2',
-        content: 'Anyone up for hiking?',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        type: MessageType.text,
-      ),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      unreadCount: 2,
-      type: ConversationType.group,
-      groupName: 'Weekend Plans',
-    ),
-  ];
+  final Map<String, User> _participantCache = {};
+  final GetUserProfile _getUserProfile = getIt<GetUserProfile>();
 
-  // Mock users data - this would come from your user repository/BLoC
-  final List<User> _users = [
-    User(
-      id: 'alice-id',
-      email: 'alice@example.com',
-      profileName: 'Alice Johnson',
-      createdAt: DateTime.now(),
-    ),
-    User(
-      id: 'bob-id',
-      email: 'bob@example.com',
-      profileName: 'Bob Smith',
-      createdAt: DateTime.now(),
-    ),
-    User(
-      id: 'charlie-id',
-      email: 'charlie@example.com',
-      profileName: 'Charlie Wilson',
-      createdAt: DateTime.now(),
-    ),
-  ];
-
-  final User _currentUser = User(
-    id: 'current-user',
-    email: 'current@example.com',
-    profileName: 'Current User',
-    createdAt: DateTime.now(),
-  );
-
-  void _showCreateOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => CreateConversationSheet(
-        onNewContact: _navigateToNewContact,
-        onCreateGroup: _navigateToCreateGroup,
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _initializeConversations();
   }
 
-  void _navigateToNewContact() {
-    // Navigate to contact search/add page
-    // Navigator.pushNamed(context, AppRouter.newContact);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Navigate to add new contact')),
-    );
+  void _initializeConversations() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      context.read<MessagingBloc>().add(
+        WatchConversations(userId: authState.user.id),
+      );
+    }
   }
 
-  void _navigateToCreateGroup() {
-    // Navigate to group creation page
-    // Navigator.pushNamed(context, AppRouter.createGroup);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Navigate to create group')));
+  Future<List<User>> _getParticipants(List<String> participantIds) async {
+    final participants = <User>[];
+
+    for (final id in participantIds) {
+      if (_participantCache.containsKey(id)) {
+        participants.add(_participantCache[id]!);
+      } else {
+        try {
+          final result = await _getUserProfile(id);
+          result.fold(
+            (failure) {
+              // If we can't load a participant, create a placeholder
+              final placeholder = User(
+                id: id,
+                email: '',
+                profileName: 'Unknown User',
+                createdAt: DateTime.now(),
+              );
+              _participantCache[id] = placeholder;
+              participants.add(placeholder);
+            },
+            (user) {
+              _participantCache[id] = user;
+              participants.add(user);
+            },
+          );
+        } catch (e) {
+          // Handle any unexpected errors
+          final placeholder = User(
+            id: id,
+            email: '',
+            profileName: 'Unknown User',
+            createdAt: DateTime.now(),
+          );
+          _participantCache[id] = placeholder;
+          participants.add(placeholder);
+        }
+      }
+    }
+
+    return participants;
   }
 
   @override
   bool get wantKeepAlive => true;
 
-  @override
-  Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-    return Scaffold(
-      body: _conversations.isEmpty
-          ? EmptyConversationsState(onStartConversation: _showCreateOptions)
-          : ListView.builder(
-              itemCount: _conversations.length,
-              itemBuilder: (context, index) {
-                final conversation = _conversations[index];
-                return ConversationTile(
-                  conversation: conversation,
-                  currentUser: _currentUser,
-                  participants: _users,
-                  onTap: () => _navigateToChat(conversation),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateOptions,
-        child: const Icon(Icons.chat),
+  void _showCreateConversationSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CreateConversationSheet(
+        onNewContact: _handleNewContact,
+        onCreateGroup: _handleCreateGroup,
       ),
     );
   }
 
-  void _navigateToChat(Conversation conversation) {
-    Navigator.pushNamed(context, AppRouter.chat, arguments: conversation.id);
+  void _handleNewContact() {
+    Navigator.pushNamed(context, AppRouter.search);
+  }
+
+  void _handleCreateGroup() {
+    // TODO: Implement group creation flow
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Group creation coming soon')));
+  }
+
+  void _openConversation(Conversation conversation, User? currentUser, List<User> participants) {
+    Navigator.pushNamed(
+      context,
+      AppRouter.chat,
+      arguments: {'conversation': conversation, 'currentUser': currentUser, 'participants': participants},
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Messages'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _showCreateConversationSheet,
+            tooltip: 'New Conversation',
+          ),
+        ],
+      ),
+      body: BlocBuilder<MessagingBloc, MessagingState>(
+        builder: (context, state) {
+          if (state.isLoading && state.conversations.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state.isFailure) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    state.message ?? 'Failed to load conversations',
+                    style: TextStyle(color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      final authState = context.read<AuthBloc>().state;
+                      if (authState is Authenticated) {
+                        context.read<MessagingBloc>().add(
+                          LoadConversations(userId: authState.user.id),
+                        );
+                      }
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (state.conversations.isEmpty) {
+            return EmptyConversationsState(
+              onStartConversation: _showCreateConversationSheet,
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              final authState = context.read<AuthBloc>().state;
+              if (authState is Authenticated) {
+                context.read<MessagingBloc>().add(
+                  LoadConversations(userId: authState.user.id),
+                );
+              }
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: state.conversations.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final conversation = state.conversations[index];
+                final authState = context.read<AuthBloc>().state;
+                final currentUser = authState is Authenticated
+                    ? authState.user
+                    : null;
+
+                return FutureBuilder<List<User>>(
+                  future: _getParticipants(conversation.participantIds),
+                  builder: (context, snapshot) {
+                    final participants = snapshot.data ?? [];
+
+                    return ConversationTile(
+                      conversation: conversation,
+                      currentUser: currentUser,
+                      participants: participants,
+                      onTap: () => _openConversation(conversation, currentUser, participants)
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../routes/app_router.dart';
 import '../../widgets/common/app_bottom_navigation_bar.dart';
 import '../map/map_home_page.dart';
 import '../messaging/conversations_page.dart';
@@ -39,21 +38,18 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppBottomNavigationBar.getTitleForIndex(_selectedIndex)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRouter.notifications),
+      body: Column(
+        children: [
+          // Camera gap
+          Container(
+            height: MediaQuery.of(context).padding.top + 10,
+            color: Theme.of(context).scaffoldBackgroundColor,
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Navigator.pushNamed(context, AppRouter.settings),
+          Expanded(
+            child: IndexedStack(index: _selectedIndex, children: _pages),
           ),
         ],
       ),
-      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

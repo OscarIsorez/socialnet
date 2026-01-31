@@ -15,14 +15,17 @@ import 'data/datasources/remote/fake_search_remote_datasource.dart';
 import 'data/datasources/remote/firebase_search_remote_datasource.dart';
 import 'data/datasources/remote/fake_social_remote_datasource.dart';
 import 'data/datasources/remote/firebase_social_remote_datasource.dart';
+import 'data/datasources/remote/messaging_remote_datasource.dart';
 import 'data/datasources/remote/search_remote_datasource.dart';
 import 'data/datasources/remote/social_remote_datasource.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/event_repository_impl.dart';
+import 'data/repositories/messaging_repository_impl.dart';
 import 'data/repositories/search_repository_impl.dart';
 import 'data/repositories/social_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
 import 'domain/repositories/event_repository.dart';
+import 'domain/repositories/messaging_repository.dart';
 import 'domain/repositories/search_repository.dart';
 import 'domain/repositories/social_repository.dart';
 import 'domain/usecases/auth/get_current_user_usecase.dart';
@@ -36,6 +39,10 @@ import 'domain/usecases/events/get_nearby_events_usecase.dart';
 import 'domain/usecases/events/get_user_created_events.dart';
 import 'domain/usecases/events/update_event_usecase.dart';
 import 'domain/usecases/events/verify_event_usecase.dart';
+import 'domain/usecases/messaging/create_conversation_usecase.dart';
+import 'domain/usecases/messaging/get_conversations_usecase.dart';
+import 'domain/usecases/messaging/get_messages_usecase.dart';
+import 'domain/usecases/messaging/send_message_usecase.dart';
 import 'domain/usecases/search/filter_events_usecase.dart';
 import 'domain/usecases/search/get_suggested_events_usecase.dart';
 import 'domain/usecases/search/search_events_usecase.dart';
@@ -45,6 +52,7 @@ import 'domain/usecases/social/update_user_profile.dart';
 import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/event/event_bloc.dart';
 import 'presentation/bloc/map/map_bloc.dart';
+import 'presentation/bloc/messaging/messaging_bloc.dart';
 import 'presentation/bloc/profile/profile_bloc.dart';
 import 'presentation/bloc/search/search_bloc.dart';
 
@@ -289,6 +297,55 @@ Future<void> configureDependencies() async {
   if (!getIt.isRegistered<GetSuggestedEventsUseCase>()) {
     getIt.registerLazySingleton<GetSuggestedEventsUseCase>(
       () => GetSuggestedEventsUseCase(getIt()),
+    );
+  }
+
+  // Messaging dependencies
+  if (!getIt.isRegistered<MessagingRemoteDataSource>()) {
+    getIt.registerLazySingleton<MessagingRemoteDataSource>(
+      () => FirebaseMessagingRemoteDataSource(),
+    );
+  }
+
+  if (!getIt.isRegistered<MessagingRepository>()) {
+    getIt.registerLazySingleton<MessagingRepository>(
+      () => MessagingRepositoryImpl(remoteDataSource: getIt()),
+    );
+  }
+
+  if (!getIt.isRegistered<GetConversationsUseCase>()) {
+    getIt.registerLazySingleton<GetConversationsUseCase>(
+      () => GetConversationsUseCase(getIt()),
+    );
+  }
+
+  if (!getIt.isRegistered<GetMessagesUseCase>()) {
+    getIt.registerLazySingleton<GetMessagesUseCase>(
+      () => GetMessagesUseCase(getIt()),
+    );
+  }
+
+  if (!getIt.isRegistered<SendMessageUseCase>()) {
+    getIt.registerLazySingleton<SendMessageUseCase>(
+      () => SendMessageUseCase(getIt()),
+    );
+  }
+
+  if (!getIt.isRegistered<CreateConversationUseCase>()) {
+    getIt.registerLazySingleton<CreateConversationUseCase>(
+      () => CreateConversationUseCase(getIt()),
+    );
+  }
+
+  if (!getIt.isRegistered<MessagingBloc>()) {
+    getIt.registerFactory<MessagingBloc>(
+      () => MessagingBloc(
+        getConversationsUseCase: getIt(),
+        getMessagesUseCase: getIt(),
+        sendMessageUseCase: getIt(),
+        createConversationUseCase: getIt(),
+        messagingRepository: getIt(),
+      ),
     );
   }
 

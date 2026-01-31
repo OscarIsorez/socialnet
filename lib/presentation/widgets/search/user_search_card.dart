@@ -106,26 +106,49 @@ class UserSearchCard extends StatelessWidget {
                 ),
               ),
 
-              // Friend count badge
+              // Chat and Friend buttons
               Column(
                 children: [
-                  Icon(
-                    Icons.people,
-                    size: 20,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${user.friendIds.length}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(
+                  // Chat button
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
                         context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
+                        '/chat',
+                        arguments: {
+                          'otherUserId': user.id,
+                          'participants': [
+                            user,
+                          ], // Pass the user as a participant
+                        },
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    tooltip: 'Start Chat',
+                  ),
+
+                  // Friend count badge
+                  Column(
+                    children: [
+                      Icon(
+                        Icons.people,
+                        size: 20,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${user.friendIds.length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

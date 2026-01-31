@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/message.dart';
-import '../../../domain/entities/user.dart';
 import 'message_bubble.dart';
 
 class MessagesList extends StatelessWidget {
   const MessagesList({
     super.key,
     required this.messages,
-    required this.currentUser,
-    this.participants = const [],
+    required this.currentUserId,
     this.isGroupChat = false,
   });
 
   final List<Message> messages;
-  final User currentUser;
-  final List<User> participants;
+  final String currentUserId;
   final bool isGroupChat;
 
   @override
@@ -62,24 +59,7 @@ class MessagesList extends StatelessWidget {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
-        final isCurrentUser = message.senderId == currentUser.id;
-
-        // Find sender info for group chats
-        User? sender;
-        if (isGroupChat && !isCurrentUser) {
-          try {
-            sender = participants.firstWhere(
-              (user) => user.id == message.senderId,
-            );
-          } catch (e) {
-            sender = User(
-              id: message.senderId,
-              email: '',
-              profileName: 'Unknown User',
-              createdAt: DateTime.now(),
-            );
-          }
-        }
+        final isCurrentUser = message.senderId == currentUserId;
 
         // Show sender name in group chats for non-current users
         final showSenderName = isGroupChat && !isCurrentUser;
@@ -87,8 +67,10 @@ class MessagesList extends StatelessWidget {
         return MessageBubble(
           message: message,
           isCurrentUser: isCurrentUser,
-          sender: sender,
           showSenderName: showSenderName,
+          senderName: showSenderName
+              ? 'User ${message.senderId}'
+              : null, // TODO: Get real user name
         );
       },
     );

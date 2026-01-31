@@ -1,15 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:socialnet/presentation/bloc/auth/auth_state.dart';
 
 import '../../../domain/entities/conversation.dart';
 import '../../../domain/entities/message.dart';
 import '../../../domain/entities/user.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/messaging/messaging_bloc.dart';
 import '../../widgets/messaging/message_input.dart';
 import '../../widgets/messaging/messages_list.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, required this.convId});
+  const ChatPage({
+    super.key,
+    this.conversationId,
+    this.otherUserId,
+    this.conversation,
+    this.currentUser,
+    this.participants = const [],
+  });
 
-  final String convId;
+  final String? conversationId;
+  final String? otherUserId;
+  final Conversation? conversation;
+  final User? currentUser;
+  final List<User> participants;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -18,156 +33,44 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
 
-  // Mock data - replace with actual data from your backend/BLoC
-  late List<Message> _messages;
-  late User _currentUser;
-  late List<User> _participants;
-  late Conversation _conversation;
+  String get _currentUserId {
+    // Use the provided currentUser if available
+    if (widget.currentUser != null) {
+      return widget.currentUser!.id;
+    }
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      return authState.user.id;
+    }
+    return 'unknown-user'; // Fallback
+  }
 
   @override
   void initState() {
     super.initState();
-    _initializeMockData();
+    _initializeChat();
   }
 
-  void _initializeMockData() {
-    _currentUser = User(
-      id: 'current-user',
-      email: 'current@example.com',
-      profileName: 'Current User',
-      createdAt: DateTime.now(),
-    );
-
-    // Mock users data - same as in conversations page
-    final allUsers = [
-      _currentUser,
-      User(
-        id: 'alice-id',
-        email: 'alice@example.com',
-        profileName: 'Alice Johnson',
-        createdAt: DateTime.now(),
-      ),
-      User(
-        id: 'bob-id',
-        email: 'bob@example.com',
-        profileName: 'Bob Smith',
-        createdAt: DateTime.now(),
-      ),
-      User(
-        id: 'charlie-id',
-        email: 'charlie@example.com',
-        profileName: 'Charlie Wilson',
-        createdAt: DateTime.now(),
-      ),
-      User(
-        id: 'dave-id',
-        email: 'dave@example.com',
-        profileName: 'Dave Brown',
-        createdAt: DateTime.now(),
-      ),
-      User(
-        id: 'eve-id',
-        email: 'eve@example.com',
-        profileName: 'Eve Davis',
-        createdAt: DateTime.now(),
-      ),
-    ];
-
-    // Initialize conversation and participants based on conversation ID
-    if (widget.convId == 'user-1') {
-      _participants = [_currentUser, allUsers[1]]; // Alice
-      _conversation = Conversation(
-        id: widget.convId,
-        participantIds: ['current-user', 'alice-id'],
-        updatedAt: DateTime.now().subtract(const Duration(minutes: 30)),
-        type: ConversationType.individual,
+  void _initializeChat() {
+    // If conversation object is provided directly, set it in the bloc state
+    if (widget.conversation != null) {
+      // If we have a conversation object, we can directly start watching its messages
+      context.read<MessagingBloc>().add(
+        WatchMessages(conversationId: widget.conversation!.id),
       );
-      _messages = [
-        Message(
-          id: 'msg-1',
-          senderId: 'alice-id',
-          receiverId: 'current-user',
-          content: 'Hey! How are you doing?',
-          timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
-          type: MessageType.text,
+    } else if (widget.conversationId != null) {
+      // Load existing conversation by ID
+      context.read<MessagingBloc>().add(
+        WatchMessages(conversationId: widget.conversationId!),
+      );
+    } else if (widget.otherUserId != null) {
+      // Create or get conversation with other user
+      context.read<MessagingBloc>().add(
+        GetOrCreateConversation(
+          participantIds: [_currentUserId, widget.otherUserId!],
         ),
-      ];
-    } else if (widget.convId == 'group-1') {
-      _participants = [
-        _currentUser,
-        allUsers[1],
-        allUsers[2],
-        allUsers[3],
-      ]; // Alice, Bob, Charlie
-      _conversation = Conversation(
-        id: widget.convId,
-        participantIds: ['current-user', 'alice-id', 'bob-id', 'charlie-id'],
-        updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
-        type: ConversationType.group,
-        groupName: 'Flutter Developers',
       );
-      _messages = [
-        Message(
-          id: 'msg-2',
-          senderId: 'alice-id',
-          receiverId: 'group-1',
-          content: 'Check out this new Flutter update!',
-          timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-          type: MessageType.text,
-        ),
-      ];
-    } else if (widget.convId == 'user-2') {
-      _participants = [_currentUser, allUsers[2]]; // Bob
-      _conversation = Conversation(
-        id: widget.convId,
-        participantIds: ['current-user', 'bob-id'],
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-        type: ConversationType.individual,
-      );
-      _messages = [
-        Message(
-          id: 'msg-3',
-          senderId: 'bob-id',
-          receiverId: 'current-user',
-          content: 'Thanks for the help earlier',
-          timestamp: DateTime.now().subtract(const Duration(days: 1)),
-          type: MessageType.text,
-        ),
-      ];
-    } else if (widget.convId == 'group-2') {
-      _participants = [
-        _currentUser,
-        allUsers[3],
-        allUsers[4],
-        allUsers[5],
-      ]; // Charlie, Dave, Eve
-      _conversation = Conversation(
-        id: widget.convId,
-        participantIds: ['current-user', 'charlie-id', 'dave-id', 'eve-id'],
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-        type: ConversationType.group,
-        groupName: 'Weekend Plans',
-      );
-      _messages = [
-        Message(
-          id: 'msg-4',
-          senderId: 'charlie-id',
-          receiverId: 'group-2',
-          content: 'Anyone up for hiking?',
-          timestamp: DateTime.now().subtract(const Duration(days: 1)),
-          type: MessageType.text,
-        ),
-      ];
-    } else {
-      // Default fallback
-      _participants = [_currentUser, allUsers[1]];
-      _conversation = Conversation(
-        id: widget.convId,
-        participantIds: ['current-user', 'alice-id'],
-        updatedAt: DateTime.now(),
-        type: ConversationType.individual,
-      );
-      _messages = [];
     }
   }
 
@@ -179,85 +82,179 @@ class _ChatPageState extends State<ChatPage> {
 
   void _sendMessage() {
     final content = _messageController.text.trim();
-    if (content.isEmpty) return;
+    final currentConversation =
+        widget.conversation ??
+        context.read<MessagingBloc>().state.currentConversation;
+    if (content.isEmpty || currentConversation == null) return;
+
+    String? receiverId;
+    if (currentConversation.isIndividual) {
+      try {
+        final otherParticipantId = currentConversation.participantIds
+            .firstWhere((id) => id != _currentUserId, orElse: () => '');
+        receiverId = otherParticipantId.isNotEmpty ? otherParticipantId : null;
+      } catch (e) {
+        print('Error finding receiver: $e');
+        receiverId = null;
+      }
+    }
 
     final newMessage = Message(
-      id: 'msg-${DateTime.now().millisecondsSinceEpoch}',
-      senderId: _currentUser.id,
-      receiverId: _conversation.isGroup
-          ? widget.convId
-          : _participants.firstWhere((u) => u.id != _currentUser.id).id,
+      id: '', // Will be generated by Firebase
+      senderId: _currentUserId,
+      conversationId: currentConversation.id,
       content: content,
       timestamp: DateTime.now(),
       type: MessageType.text,
+      receiverId: receiverId,
     );
 
-    setState(() {
-      _messages.add(newMessage);
-      _messageController.clear();
-    });
+    context.read<MessagingBloc>().add(SendMessage(message: newMessage));
+    _messageController.clear();
   }
 
-  String _getChatTitle() {
-    if (_conversation.isGroup) {
-      return _conversation.groupName ?? 'Group Chat';
+  String _getChatTitle(Conversation? conversation) {
+    // Use provided conversation first, then fall back to state
+    final currentConversation = widget.conversation ?? conversation;
+
+    if (currentConversation == null) return 'Loading...';
+
+    if (currentConversation.isGroup) {
+      return currentConversation.groupName ?? 'Group Chat';
     }
 
-    final otherUser = _participants.firstWhere(
-      (user) => user.id != _currentUser.id,
-    );
-    return otherUser.profileName;
+    // For individual chats, try to find the other participant
+    // Use provided participants first, then try to get from state
+    if (widget.participants.isNotEmpty) {
+      try {
+        final otherParticipant = widget.participants.firstWhere(
+          (user) => user.id != _currentUserId,
+          orElse: () => widget.participants.first,
+        );
+        return otherParticipant.profileName;
+      } catch (e) {
+        // Fall through to default handling
+      }
+    }
+
+    // Fallback: try to find other participant by ID
+    try {
+      final otherParticipantId = currentConversation.participantIds.firstWhere(
+        (id) => id != _currentUserId,
+        orElse: () => '',
+      );
+
+      if (otherParticipantId.isEmpty) {
+        return 'Chat';
+      }
+
+      // TODO: Implement user name lookup from participant cache or user repository
+      return 'Chat'; // Placeholder - implement user name lookup
+    } catch (e) {
+      return 'Chat';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return BlocBuilder<MessagingBloc, MessagingState>(
+      builder: (context, state) {
+        final currentConversation =
+            widget.conversation ??
+            state.currentConversation ??
+            state.createdConversation;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(_getChatTitle(currentConversation)),
+            actions: [
+              if (currentConversation?.isGroup == true)
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  onPressed: () {
+                    // Navigate to group info
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Group info coming soon')),
+                    );
+                  },
+                ),
+            ],
+          ),
+          body: BlocListener<MessagingBloc, MessagingState>(
+            listener: (context, state) {
+              if (state.createdConversation != null &&
+                  currentConversation == null) {
+                // New conversation was created/found, start watching its messages
+                context.read<MessagingBloc>().add(
+                  WatchMessages(conversationId: state.createdConversation!.id),
+                );
+              }
+
+              if (state.isFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message ?? 'An error occurred')),
+                );
+              }
+            },
+            child: _buildBody(state, currentConversation),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(MessagingState state, Conversation? currentConversation) {
+    // If we have a provided conversation, we don't need to wait for bloc loading
+    final hasProvidedConversation = widget.conversation != null;
+
+    if (state.isLoading &&
+        currentConversation == null &&
+        !hasProvidedConversation) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.isFailure &&
+        currentConversation == null &&
+        !hasProvidedConversation) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_getChatTitle()),
-            if (_conversation.isGroup)
-              Text(
-                '${_conversation.memberCount} members',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-              ),
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              state.message ?? 'Failed to load chat',
+              style: TextStyle(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _initializeChat,
+              child: const Text('Try Again'),
+            ),
           ],
         ),
-        actions: [
-          if (_conversation.isGroup)
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: () {
-                // Navigate to group info
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Group info coming soon')),
-                );
-              },
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: MessagesList(
-              messages: _messages,
-              currentUser: _currentUser,
-              participants: _participants,
-              isGroupChat: _conversation.isGroup,
-            ),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: MessagesList(
+            messages: state.currentMessages,
+            currentUserId: _currentUserId,
+            isGroupChat: currentConversation?.isGroup ?? false,
           ),
+        ),
+        if (currentConversation != null)
           MessageInput(
             controller: _messageController,
             onSend: _sendMessage,
-            hintText: _conversation.isGroup
-                ? 'Message ${_conversation.groupName ?? 'group'}...'
-                : 'Message ${_getChatTitle()}...',
+            hintText: currentConversation.isGroup
+                ? 'Message ${currentConversation.groupName ?? 'group'}...'
+                : 'Message ${_getChatTitle(currentConversation)}...',
           ),
-        ],
-      ),
+      ],
     );
   }
 }
